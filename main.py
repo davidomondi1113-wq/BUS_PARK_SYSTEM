@@ -1,6 +1,7 @@
 # main.py
 from flask import Flask, render_template, request, redirect, url_for, session, Response
 from datetime import datetime
+import uuid
 import data
 import drivers as drv
 import slots as slts
@@ -21,6 +22,11 @@ def ensure_default_user():
     if not data.users:
         usr.add_user("admin", "admin123", "Admin", "Administrator")
         print("[INFO] Created default admin user: admin/admin123")
+
+
+def _generate_receipt_number():
+    """Generate a short, unique receipt number for parking payments."""
+    return f"R{datetime.now().strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:6].upper()}"
 
 
 # Ensure a default login exists on startup.
@@ -102,30 +108,68 @@ def bus_entry():
     message = None
     msg_type = "success"
     if request.method == "POST":
-        bus_number = request.form["bus_number"].strip().upper()
-        bus_type   = request.form.get("bus_type", "Standard")
-        route      = request.form.get("route", "Unknown")
-        owner      = request.form.get("owner", "Unknown")
+        bus_number   = request.form["bus_number"].strip().upper()
+        bus_type     = request.form.get("bus_type", "Standard")
+        route        = request.form.get("route", "Unknown")
+        owner        = request.form.get("owner", "Unknown")
+        driver_name  = request.form.get("driver_name", "Unknown")
+        driver_phone = request.form.get("driver_phone", "").strip()
 
-        if any(b["bus_number"] == bus_number for b in data.parked_buses):
+        if not driver_phone:
+            message  = "Driver phone number is required to process parking fee."
+            msg_type = "error"
+        elif any(b["bus_number"] == bus_number for b in data.parked_buses):
             message  = f"Bus {bus_number} is already parked!"
             msg_type = "error"
         elif slts.is_full():
             message  = "⚠️ Park is FULL! No available slots."
             msg_type = "error"
         else:
+            receipt = _generate_receipt_number()
+            entry_time = datetime.now()
             slot = slts.assign_slot(bus_number)
             data.parked_buses.append({
-                "bus_number": bus_number,
-                "bus_type":   bus_type,
-                "route":      route,
-                "owner":      owner,
-                "slot":       slot["slot_number"],
-                "entry_time": datetime.now(),
+                "bus_number":     bus_number,
+                "bus_type":       bus_type,
+                "route":          route,
+                "owner":          owner,
+                "driver_name":    driver_name,
+                "driver_phone":   driver_phone,
+                "receipt_number": receipt,
+                "slot":           slot["slot_number"],
+                "entry_time":     entry_time,
             })
+
+            txns.record_transaction(
+                bus_number=bus_number,
+                bus_type=bus_type,
+                entry_time=entry_time,
+                exit_time=entry_time,
+                pass_type="None",
+                recorded_by=current_user()["username"],
+                receipt_number=receipt,
+                driver_phone=driver_phone,
+                fixed_fee=100,
+            )
+
             data.save_data()
-            message = f"Bus {bus_number} entered. Slot {slot['slot_number']} assigned."
+            return redirect(url_for("receipt", receipt_number=receipt))
     return render_template("bus_entry.html", message=message, msg_type=msg_type, user=current_user())
+
+
+# ---------------------------
+# Receipt View
+# ---------------------------
+@app.route("/receipt/<receipt_number>")
+@login_required
+def receipt(receipt_number):
+    txn = txns.get_transaction_by_receipt(receipt_number)
+    if not txn:
+        return render_template("receipt.html", error="Receipt not found.", receipt=None, user=current_user())
+
+    # Try to locate an active parked bus matching this receipt (optional)
+    bus = next((b for b in data.parked_buses if b.get("receipt_number") == receipt_number), None)
+    return render_template("receipt.html", txn=txn, bus=bus, user=current_user())
 
 
 # ---------------------------
@@ -138,29 +182,46 @@ def bus_exit():
     msg_type = "success"
     txn      = None
     if request.method == "POST":
-        bus_number = request.form["bus_number"].strip().upper()
-        pass_type  = request.form.get("pass_type", "None")
+        bus_number     = request.form["bus_number"].strip().upper()
+        receipt_number = request.form.get("receipt_number", "").strip().upper()
         bus = next((b for b in data.parked_buses if b["bus_number"] == bus_number), None)
-        if bus:
+
+        if not bus:
+            message  = f"Bus {bus_number} not found in park."
+            msg_type = "error"
+        elif not receipt_number or receipt_number != bus.get("receipt_number"):
+            message  = "Receipt number does not match. Please provide the correct receipt to exit."
+            msg_type = "error"
+        else:
             exit_time = datetime.now()
+            entry_time = bus.get("entry_time", exit_time)
+            if isinstance(entry_time, str):
+                try:
+                    entry_time = datetime.strptime(entry_time, "%Y-%m-%d %H:%M")
+                except Exception:
+                    entry_time = exit_time
+
             txn = txns.record_transaction(
-                bus_number   = bus_number,
-                bus_type     = bus.get("bus_type", "Standard"),
-                entry_time   = bus.get("entry_time", exit_time),
-                exit_time    = exit_time,
-                pass_type    = pass_type,
-                recorded_by  = current_user()["username"],
+                bus_number=bus_number,
+                bus_type=bus.get("bus_type", "Standard"),
+                entry_time=entry_time,
+                exit_time=exit_time,
+                pass_type="None",
+                recorded_by=current_user()["username"],
+                receipt_number=receipt_number,
+                driver_phone=bus.get("driver_phone"),
+                fixed_fee=0,
             )
             data.parked_buses.remove(bus)
             slts.free_slot(bus_number)
             data.save_data()
-            message = f"Bus {bus_number} exited. Fee: Ksh {txn['amount_paid']}"
-        else:
-            message  = f"Bus {bus_number} not found in park."
-            msg_type = "error"
+            message = (
+                f"Bus {bus_number} exited. Receipt {receipt_number} confirmed. "
+                f"No additional fee due (payment already made at entry)."
+            )
     return render_template("bus_exit.html",
         message=message, msg_type=msg_type, txn=txn,
-        pass_types=list(txns.PASS_TYPES.keys()), user=current_user()
+        user=current_user()
     )
 
 

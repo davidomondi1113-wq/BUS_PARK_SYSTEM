@@ -19,7 +19,7 @@ parked_buses = []
 drivers = []
 # Each driver: { id, name, role, phone, email, license_number, assigned_bus }
 
-TOTAL_SLOTS = 20
+TOTAL_SLOTS = 100
 slots = [
     {"slot_number": i, "status": "available", "bus_number": None}
     for i in range(1, TOTAL_SLOTS + 1)
@@ -52,6 +52,13 @@ def load_data():
     except Exception:
         # If something goes wrong, continue with defaults.
         pass
+
+    # Ensure the slots structure matches configured capacity (e.g. when TOTAL_SLOTS increases)
+    if len(slots) < TOTAL_SLOTS:
+        for i in range(len(slots) + 1, TOTAL_SLOTS + 1):
+            slots.append({"slot_number": i, "status": "available", "bus_number": None})
+    elif len(slots) > TOTAL_SLOTS:
+        slots = [s for s in slots if s.get("slot_number", 0) <= TOTAL_SLOTS]
 
 
 def save_data():

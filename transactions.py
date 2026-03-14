@@ -32,19 +32,26 @@ def _new_id():
     return id_
 
 
-def calculate_fee(bus_type, entry_time, exit_time, pass_type="None"):
-    """Calculate parking fee based on duration, bus type, and pass discount."""
-    duration = exit_time - entry_time
-    minutes = max(int(duration.total_seconds() / 60), 1)
-    hours = minutes / 60
+def calculate_fee(bus_type, entry_time, exit_time, pass_type="None", fixed_fee=None):
+    """Calculate parking fee based on duration, bus type, and pass discount.
 
-    rate = FEE_RATES.get(bus_type, FEE_RATES["Unknown"])
-    gross_fee = round(hours * rate, 2)
-    gross_fee = max(gross_fee, MINIMUM_FEE)
+    When `fixed_fee` is provided, the fee is fixed (e.g., an upfront payment)
+    and duration-based calculation is not performed.
+    """
+    if fixed_fee is not None:
+        gross_fee = fixed_fee
+        minutes = 0
+    else:
+        duration = exit_time - entry_time
+        minutes = max(int(duration.total_seconds() / 60), 1)
+        hours = minutes / 60
+        rate = FEE_RATES.get(bus_type, FEE_RATES["Unknown"])
+        gross_fee = round(hours * rate, 2)
+        gross_fee = max(gross_fee, MINIMUM_FEE)
 
     discount_pct = PASS_TYPES.get(pass_type, 0)
     discount_amt = round(gross_fee * discount_pct / 100, 2)
-    amount_paid  = round(gross_fee - discount_amt, 2)
+    amount_paid = round(gross_fee - discount_amt, 2)
 
     return {
         "duration_minutes": minutes,
@@ -56,8 +63,15 @@ def calculate_fee(bus_type, entry_time, exit_time, pass_type="None"):
 
 
 def record_transaction(bus_number, bus_type, entry_time, exit_time,
-                       pass_type="None", recorded_by="staff"):
-    fee_info = calculate_fee(bus_type, entry_time, exit_time, pass_type)
+                       pass_type="None", recorded_by="staff",
+                       receipt_number=None, driver_phone=None, fixed_fee=None):
+    """Record a parking transaction.
+
+    - `fixed_fee` can be used to record an upfront payment (e.g., entry fee).
+    - `receipt_number` is used to verify authenticity at exit.
+    - `driver_phone` stores the phone number used for payment/verification.
+    """
+    fee_info = calculate_fee(bus_type, entry_time, exit_time, pass_type, fixed_fee=fixed_fee)
     txn = {
         "id":               _new_id(),
         "bus_number":       bus_number,
@@ -72,6 +86,8 @@ def record_transaction(bus_number, bus_type, entry_time, exit_time,
         "pass_used":        pass_type,
         "recorded_by":      recorded_by,
         "date":             exit_time.strftime("%Y-%m-%d"),
+        "receipt_number":   receipt_number,
+        "driver_phone":     driver_phone,
     }
     data.transactions.append(txn)
     data.save_data()
@@ -85,6 +101,13 @@ def get_all_transactions():
 def get_transaction_by_id(txn_id):
     for t in data.transactions:
         if t["id"] == txn_id:
+            return t
+    return None
+
+
+def get_transaction_by_receipt(receipt_number):
+    for t in data.transactions:
+        if t.get("receipt_number") == receipt_number:
             return t
     return None
 

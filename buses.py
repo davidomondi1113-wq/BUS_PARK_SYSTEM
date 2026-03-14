@@ -5,7 +5,7 @@
 # -----------------------------
 parked_buses = []  # List of dictionaries: each bus info
 parking_slots = {}  # key=slot number, value=bus_number or None
-TOTAL_SLOTS = 10  # Example: total parking slots
+TOTAL_SLOTS = 100  # Max parking slots
 
 # Initialize all slots as free
 for i in range(1, TOTAL_SLOTS + 1):
@@ -76,8 +76,8 @@ def bus_exit(bus_number):
             slot = bus.get('slot')
             if slot:
                 parking_slots[slot] = None  # Free slot
-            # Simple fee calculation (flat for now)
-            fee_paid = 200
+            # Flat parking fee (collected at entry in the web UI)
+            fee_paid = 100
             return True, f"Bus {bus_number} exited successfully. Fee: Ksh {fee_paid}", fee_paid
     return False, f"Bus {bus_number} not found or already exited.", 0
 

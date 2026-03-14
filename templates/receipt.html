@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Receipt - Kisumu Mpya Bus Park</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; }
+        header { background: #1a73e8; color: white; padding: 20px; text-align: center; }
+        .container { max-width: 600px; margin: 40px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        h2 { color: #1a73e8; margin-bottom: 10px; }
+        .receipt-card { border: 1px dashed #cfd8dc; padding: 20px; border-radius: 10px; background: #fafafa; }
+        .receipt-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+        .receipt-header h3 { margin: 0 0 6px; }
+        .receipt-body p, .receipt-footer p { margin: 6px 0; font-size: 15px; }
+        .receipt-body .label, .receipt-footer .label { font-weight: bold; }
+        .receipt-footer { margin-top: 14px; padding-top: 10px; border-top: 1px dashed #cfd8dc; }
+        .note { font-size: 13px; color: #555; margin-top: 10px; }
+        .small { font-size: 13px; color: #4a4a4a; margin: 2px 0; }
+        .qr { text-align: center; }
+        #qrCanvas { width: 90px; height: 90px; border: 1px solid #ddd; border-radius: 12px; }
+        button { margin-top: 20px; width: 100%; padding: 12px; background: #1a73e8; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; }
+        button:hover { background: #1558b0; }
+        .back { display: inline-block; margin-top: 15px; color: #1a73e8; text-decoration: none; }
+        footer { background: #333; color: white; text-align: center; padding: 15px; position: fixed; width: 100%; bottom: 0; }
+        .error { padding: 15px; border-radius: 8px; background: #f8d7da; color: #721c24; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Kisumu Mpya Bus Park</h1>
+    </header>
+
+    <div class="container">
+        <h2>Parking Receipt</h2>
+        {% if error %}
+            <div class="error">{{ error }}</div>
+            <a href="/bus_entry" class="back">← Back to Entry</a>
+        {% else %}
+            <div class="receipt-card">
+                <div class="receipt-header">
+                    <div>
+                        <h3>Kisumu Mpya Bus Park</h3>
+                        <p class="small">Receipt #: <strong>{{ txn.receipt_number }}</strong></p>
+                        <p class="small">Date: {{ txn.date }} {{ txn.exit_time }}</p>
+                    </div>
+                    <div class="qr">
+                        <canvas id="qrCanvas"></canvas>
+                        <p class="small">Scan to verify</p>
+                    </div>
+                </div>
+
+                <div class="receipt-body">
+                    <p><span class="label">Bus Number:</span> {{ txn.bus_number }}</p>
+                    <p><span class="label">Bus Type:</span> {{ txn.bus_type }}</p>
+                    <p><span class="label">Driver Phone:</span> {{ txn.driver_phone }}</p>
+                    {% if bus %}
+                        <p><span class="label">Slot:</span> {{ bus.slot }}</p>
+                        <p><span class="label">Route:</span> {{ bus.route }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="receipt-footer">
+                    <p><span class="label">Amount Paid:</span> Ksh {{ txn.amount_paid }}</p>
+                    <p class="note">Keep this receipt for exit verification.</p>
+                </div>
+            </div>
+
+            <button onclick="window.print()">Print Receipt</button>
+            <a href="/bus_entry" class="back">← New Entry</a>
+            <a href="/bus_exit" class="back" style="margin-left: 18px;">→ Exit Bus</a>
+        {% endif %}
+    </div>
+
+    <footer><p>Designed by Daose David</p></footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js" integrity="sha512-RgxS5Qm+pNOV2L+csKIzU2mgXis0oC1qxpV9X4qhuRhbv6iO0cOW2aI9vzThZGkHoW4KnB/s5ifg3dSovF0t1g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const canvas = document.getElementById('qrCanvas');
+            if (!canvas) return;
+            const qr = new QRious({
+                element: canvas,
+                value: window.location.href,
+                size: 120,
+                level: 'H'
+            });
+        });
+    </script>
+</body>
+</html>

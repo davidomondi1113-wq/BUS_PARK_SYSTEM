@@ -33,7 +33,7 @@
     </header>
     <div class="container">
         <h2>Bus Entry</h2>
-        {% if message %}<div class="success">{{ message }}</div>{% endif %}
+        {% if message %}<div class="{{ msg_type }}">{{ message }}</div>{% endif %}
         <form method="POST">
             <label>Bus Number</label>
             <input type="text" name="bus_number" placeholder="e.g. KBZ 123A" required>
@@ -47,7 +47,11 @@
             <input type="text" name="route" placeholder="e.g. Kisumu - Nairobi">
             <label>Owner / Company</label>
             <input type="text" name="owner" placeholder="e.g. Easy Coach">
-            <button type="submit">Record Entry</button>
+            <label>Driver Name</label>
+            <input type="text" name="driver_name" placeholder="e.g. John Doe">
+            <label>Driver Phone</label>
+            <input type="text" name="driver_phone" placeholder="e.g. 0712 345 678" required>
+            <button type="submit">Record Entry & Issue Receipt</button>
         </form>
         <a href="/" class="back">← Back to Home</a>
     </div>

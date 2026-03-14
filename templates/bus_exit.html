@@ -35,12 +35,14 @@
     <div class="container">
         <h2>Bus Exit</h2>
         {% if message %}
-            <div class="{{ 'error' if 'not found' in message else 'success' }}">{{ message }}</div>
+            <div class="{{ msg_type }}">{{ message }}</div>
         {% endif %}
         <form method="POST">
             <label>Bus Number</label>
             <input type="text" name="bus_number" placeholder="e.g. KBZ 123A" required>
-            <button type="submit">Record Exit & Calculate Fee</button>
+            <label>Receipt Number</label>
+            <input type="text" name="receipt_number" placeholder="e.g. R20240314123000-ABC123" required>
+            <button type="submit">Confirm Receipt & Record Exit</button>
         </form>
         <a href="/" class="back">← Back to Home</a>
     </div>
