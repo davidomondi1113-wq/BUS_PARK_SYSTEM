@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bus Exit - Kisumu Mpya Bus Park</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; }
+        header { background: #1a73e8; color: white; padding: 20px; text-align: center; }
+        nav a { margin: 0 15px; color: white; text-decoration: none; font-weight: bold; }
+        nav a:hover { color: #ffd700; }
+        .container { max-width: 500px; margin: 40px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        h2 { color: #1a73e8; }
+        label { font-weight: bold; display: block; margin-top: 12px; }
+        input { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; box-sizing: border-box; }
+        button { margin-top: 20px; width: 100%; padding: 12px; background: #e53935; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; }
+        button:hover { background: #b71c1c; }
+        .success { background: #d4edda; color: #155724; padding: 10px; border-radius: 6px; margin-bottom: 15px; }
+        .error { background: #f8d7da; color: #721c24; padding: 10px; border-radius: 6px; margin-bottom: 15px; }
+        .back { display: inline-block; margin-top: 15px; color: #1a73e8; text-decoration: none; }
+        footer { background: #333; color: white; text-align: center; padding: 15px; position: fixed; width: 100%; bottom: 0; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Kisumu Mpya Bus Park</h1>
+        <nav>
+            <a href="/">Home</a>
+            <a href="/bus_entry">Bus Entry</a>
+            <a href="/bus_exit">Bus Exit</a>
+            <a href="/slots">Slots</a>
+            <a href="/drivers">Drivers</a>
+            <a href="/reports">Reports</a>
+        </nav>
+    </header>
+    <div class="container">
+        <h2>Bus Exit</h2>
+        {% if message %}
+            <div class="{{ 'error' if 'not found' in message else 'success' }}">{{ message }}</div>
+        {% endif %}
+        <form method="POST">
+            <label>Bus Number</label>
+            <input type="text" name="bus_number" placeholder="e.g. KBZ 123A" required>
+            <button type="submit">Record Exit & Calculate Fee</button>
+        </form>
+        <a href="/" class="back">← Back to Home</a>
+    </div>
+    <footer><p>Designed by Daose David</p></footer>
+</body>
+</html>

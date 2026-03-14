@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Drivers & Conductors - Kisumu Mpya Bus Park</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; }
+        header { background: #1a73e8; color: white; padding: 20px; text-align: center; }
+        nav a { margin: 0 15px; color: white; text-decoration: none; font-weight: bold; }
+        nav a:hover { color: #ffd700; }
+        .container { max-width: 850px; margin: 40px auto 80px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        h2 { color: #1a73e8; }
+        .btn-add { display: inline-block; padding: 10px 20px; background: #1a73e8; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin-bottom: 20px; }
+        .btn-add:hover { background: #1558b0; }
+        .driver-card { display: flex; justify-content: space-between; align-items: center; background: #fff; border: 1px solid #e0e0e0; border-left: 5px solid #1a73e8; border-radius: 8px; padding: 15px 20px; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
+        .driver-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+        .driver-info h3 { margin: 0 0 5px 0; color: #1a73e8; font-size: 17px; }
+        .driver-info p { margin: 2px 0; font-size: 14px; color: #555; }
+        .driver-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; margin-left: 8px; }
+        .badge-driver { background: #d1ecf1; color: #0c5460; }
+        .badge-conductor { background: #fff3cd; color: #856404; }
+        .driver-actions { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+        .btn-edit { padding: 6px 14px; background: #ffc107; color: #333; border: none; border-radius: 5px; text-decoration: none; font-size: 13px; font-weight: bold; cursor: pointer; }
+        .btn-edit:hover { background: #e0a800; }
+        .btn-delete { padding: 6px 14px; background: #dc3545; color: white; border: none; border-radius: 5px; font-size: 13px; font-weight: bold; cursor: pointer; }
+        .btn-delete:hover { background: #b02a37; }
+        .assign-form { display: flex; gap: 6px; align-items: center; margin-top: 4px; }
+        .assign-form select { padding: 5px 8px; border-radius: 5px; border: 1px solid #ccc; font-size: 13px; }
+        .btn-assign { padding: 5px 12px; background: #1a73e8; color: white; border: none; border-radius: 5px; font-size: 13px; font-weight: bold; cursor: pointer; }
+        .btn-assign:hover { background: #1558b0; }
+        .assigned-bus { font-size: 13px; color: #28a745; font-weight: bold; }
+        .no-bus { font-size: 13px; color: #999; }
+        footer { background: #333; color: white; text-align: center; padding: 15px; position: fixed; width: 100%; bottom: 0; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Kisumu Mpya Bus Park</h1>
+        <nav>
+            <a href="/">Home</a>
+            <a href="/bus_entry">Bus Entry</a>
+            <a href="/bus_exit">Bus Exit</a>
+            <a href="/drivers">Drivers</a>
+            <a href="/reports">Reports</a>
+        </nav>
+    </header>
+    <div class="container">
+        <h2>Drivers & Conductors</h2>
+        <a href="/drivers/add" class="btn-add">+ Add Driver / Conductor</a>
+
+        {% if drivers %}
+            {% for d in drivers %}
+            <div class="driver-card">
+                <div class="driver-info">
+                    <h3>{{ d.name }}
+                        <span class="driver-badge {{ 'badge-driver' if d.role == 'Driver' else 'badge-conductor' }}">
+                            {{ d.role }}
+                        </span>
+                    </h3>
+                    <p>📞 {{ d.phone }} &nbsp;|&nbsp; ✉️ {{ d.email }}</p>
+                    <p>🪪 License: {{ d.license_number }}</p>
+                    <p>
+                        🚌 Assigned Bus:
+                        {% if d.assigned_bus %}
+                            <span class="assigned-bus">{{ d.assigned_bus }}</span>
+                        {% else %}
+                            <span class="no-bus">Not assigned</span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="driver-actions">
+                    <a href="/drivers/edit/{{ d.id }}" class="btn-edit">✏️ Edit</a>
+                    <form method="POST" action="/drivers/delete/{{ d.id }}" onsubmit="return confirm('Delete {{ d.name }}?')">
+                        <button type="submit" class="btn-delete">🗑️ Delete</button>
+                    </form>
+                    <form method="POST" action="/drivers/assign/{{ d.id }}" class="assign-form">
+                        <select name="bus_number">
+                            <option value="">-- Assign Bus --</option>
+                            {% for bus in parked_buses %}
+                            <option value="{{ bus.bus_number }}" {{ 'selected' if d.assigned_bus == bus.bus_number }}>
+                                {{ bus.bus_number }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn-assign">Assign</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p>No drivers or conductors added yet.</p>
+        {% endif %}
+    </div>
+    <footer><p>Designed by Daose David</p></footer>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Parking Slots - Kisumu Mpya Bus Park</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; }
+        header { background: #1a73e8; color: white; padding: 20px; text-align: center; }
+        nav a { margin: 0 15px; color: white; text-decoration: none; font-weight: bold; }
+        nav a:hover { color: #ffd700; }
+        .container { max-width: 860px; margin: 40px auto 80px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        h2 { color: #1a73e8; margin-top: 0; }
+
+        /* Summary Cards */
+        .slots-summary { display: flex; gap: 20px; margin-bottom: 25px; flex-wrap: wrap; }
+        .summary-card { flex: 1; min-width: 140px; padding: 18px; border-radius: 10px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .summary-card h3 { margin: 0 0 6px 0; font-size: 32px; }
+        .summary-card p { margin: 0; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
+        .card-total    { background: #e8f0fe; color: #1a73e8; }
+        .card-available { background: #e6f4ea; color: #1e7e34; }
+        .card-occupied  { background: #fce8e6; color: #c5221f; }
+
+        /* Full Alert */
+        .alert-full { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; border-radius: 8px; padding: 14px 18px; font-weight: bold; font-size: 16px; margin-bottom: 20px; text-align: center; }
+
+        /* Slots Grid */
+        .slots-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 12px; margin-top: 10px; }
+        .slot-box { border-radius: 8px; padding: 14px 8px; text-align: center; font-weight: bold; font-size: 13px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); transition: transform 0.15s; }
+        .slot-box:hover { transform: scale(1.05); }
+        .slot-available { background: #e6f4ea; border: 2px solid #34a853; color: #1e7e34; }
+        .slot-occupied  { background: #fce8e6; border: 2px solid #ea4335; color: #c5221f; }
+        .slot-number { font-size: 20px; display: block; margin-bottom: 4px; }
+        .slot-bus { font-size: 11px; word-break: break-all; color: #555; margin-top: 4px; display: block; }
+
+        /* Legend */
+        .legend { display: flex; gap: 20px; margin-top: 20px; font-size: 13px; }
+        .legend-dot { display: inline-block; width: 14px; height: 14px; border-radius: 3px; margin-right: 6px; vertical-align: middle; }
+        .dot-available { background: #34a853; }
+        .dot-occupied  { background: #ea4335; }
+
+        footer { background: #333; color: white; text-align: center; padding: 15px; position: fixed; width: 100%; bottom: 0; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Kisumu Mpya Bus Park</h1>
+        <nav>
+            <a href="/">Home</a>
+            <a href="/bus_entry">Bus Entry</a>
+            <a href="/bus_exit">Bus Exit</a>
+            <a href="/slots">Slots</a>
+            <a href="/drivers">Drivers</a>
+            <a href="/reports">Reports</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <h2>🅿️ Parking Slot Status</h2>
+
+        <!-- Summary Cards -->
+        <div class="slots-summary">
+            <div class="summary-card card-total">
+                <h3>{{ total }}</h3>
+                <p>Total Slots</p>
+            </div>
+            <div class="summary-card card-available">
+                <h3>{{ available }}</h3>
+                <p>Available</p>
+            </div>
+            <div class="summary-card card-occupied">
+                <h3>{{ occupied }}</h3>
+                <p>Occupied</p>
+            </div>
+        </div>
+
+        <!-- Full Alert -->
+        {% if is_full %}
+        <div class="alert-full">
+            ⚠️ PARK IS FULL! No available slots. Buses cannot enter until a slot is freed.
+        </div>
+        {% endif %}
+
+        <!-- Slots Grid -->
+        <div class="slots-grid">
+            {% for slot in slots %}
+            <div class="slot-box {{ 'slot-occupied' if slot.status == 'occupied' else 'slot-available' }}">
+                <span class="slot-number">{{ slot.slot_number }}</span>
+                {% if slot.status == 'occupied' %}
+                    🔴 Occupied
+                    <span class="slot-bus">{{ slot.bus_number }}</span>
+                {% else %}
+                    🟢 Free
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Legend -->
+        <div class="legend">
+            <span><span class="legend-dot dot-available"></span> Available</span>
+            <span><span class="legend-dot dot-occupied"></span> Occupied</span>
+        </div>
+    </div>
+
+    <footer><p>Designed by Daose David</p></footer>
+</body>
+</html>

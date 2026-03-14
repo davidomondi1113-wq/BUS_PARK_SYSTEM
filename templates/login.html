@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - Kisumu Mpya Bus Park</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; }
+        header { background: #1a73e8; color: white; padding: 20px; text-align: center; }
+        .login-wrapper { display: flex; justify-content: center; align-items: center; min-height: 80vh; }
+        .login-box { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.12); width: 100%; max-width: 400px; }
+        .login-box h2 { text-align: center; color: #1a73e8; margin-bottom: 25px; }
+        label { font-weight: bold; display: block; margin-top: 12px; font-size: 14px; }
+        input { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; box-sizing: border-box; }
+        button { margin-top: 22px; width: 100%; padding: 12px; background: #1a73e8; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #1558b0; }
+        .error { background: #f8d7da; color: #721c24; padding: 10px; border-radius: 6px; margin-bottom: 10px; text-align: center; }
+        footer { background: #333; color: white; text-align: center; padding: 15px; position: fixed; width: 100%; bottom: 0; }
+    </style>
+</head>
+<body>
+    <header><h1>Kisumu Mpya Bus Park</h1></header>
+    <div class="login-wrapper">
+        <div class="login-box">
+            {% if setup %}
+            <h2>🛠️ Create Admin Account</h2>
+            <p style="text-align:center; color:#555; margin-bottom: 16px;">No users found. Create the first administrator account below.</p>
+        {% else %}
+            <h2>🔐 Staff Login</h2>
+        {% endif %}
+
+        {% if error %}<div class="error">{{ error }}</div>{% endif %}
+        <form method="POST">
+            <label>Username</label>
+            <input type="text" name="username" placeholder="Enter username" required autofocus>
+            {% if setup %}
+                <label>Full name</label>
+                <input type="text" name="name" placeholder="Administrator Name" value="Administrator">
+            {% endif %}
+            <label>Password</label>
+            <input type="password" name="password" placeholder="Enter password" required>
+            <button type="submit">{% if setup %}Create Account{% else %}Login{% endif %}</button>
+        </form>
+        </div>
+    </div>
+    <footer><p>Designed by Daose David</p></footer>
+</body>
+</html>

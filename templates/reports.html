@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Reports - Kisumu Mpya Bus Park</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; }
+        header { background: #1a73e8; color: white; padding: 20px; text-align: center; }
+        nav a { margin: 0 12px; color: white; text-decoration: none; font-weight: bold; font-size: 14px; }
+        nav a:hover { color: #ffd700; }
+        .container { max-width: 960px; margin: 40px auto 80px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        h2 { color: #1a73e8; margin-top: 0; }
+        .report-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .tab-btn { padding: 8px 20px; border: 2px solid #1a73e8; border-radius: 20px; background: white; color: #1a73e8; font-weight: bold; cursor: pointer; text-decoration: none; font-size: 14px; transition: 0.2s; }
+        .tab-btn:hover, .tab-btn.active { background: #1a73e8; color: white; }
+        .report-box { background: #f8f9fa; border-radius: 10px; padding: 20px; margin-bottom: 20px; border-left: 5px solid #1a73e8; }
+        .report-box h3 { margin-top: 0; color: #1a73e8; }
+        .stat-row { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 15px; }
+        .stat-item { background: white; border-radius: 8px; padding: 12px 18px; box-shadow: 0 2px 6px rgba(0,0,0,0.07); min-width: 120px; text-align: center; }
+        .stat-item span { display: block; font-size: 22px; font-weight: bold; color: #1a73e8; }
+        .stat-item p { margin: 4px 0 0 0; font-size: 12px; color: #777; text-transform: uppercase; }
+        .freq-list { list-style: none; padding: 0; margin: 0; }
+        .freq-list li { display: flex; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid #eee; font-size: 14px; }
+        .freq-list li:last-child { border-bottom: none; }
+        .freq-count { font-weight: bold; color: #1a73e8; }
+        .export-btn { display: inline-block; padding: 9px 20px; background: #28a745; color: white; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px; }
+        .export-btn:hover { background: #218838; }
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+        th, td { padding: 9px 12px; border: 1px solid #ddd; text-align: left; }
+        th { background: #1a73e8; color: white; }
+        tr:nth-child(even) { background: #f9f9f9; }
+        footer { background: #333; color: white; text-align: center; padding: 15px; position: fixed; width: 100%; bottom: 0; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Kisumu Mpya Bus Park</h1>
+        <nav>
+            <a href="/">Home</a>
+            <a href="/bus_entry">Bus Entry</a>
+            <a href="/bus_exit">Bus Exit</a>
+            <a href="/slots">Slots</a>
+            <a href="/drivers">Drivers</a>
+            <a href="/transactions">Transactions</a>
+            <a href="/reports">Reports</a>
+            {% if user and user.role == 'Admin' %}<a href="/users">Users</a>{% endif %}
+            <a href="/logout">Logout ({{ user.username if user }})</a>
+        </nav>
+    </header>
+    <div class="container">
+        <h2>📊 Reports</h2>
+
+        <!-- Period Tabs -->
+        <div class="report-tabs">
+            <a href="/reports?period=daily"   class="tab-btn {{ 'active' if period == 'daily' }}">Daily</a>
+            <a href="/reports?period=weekly"  class="tab-btn {{ 'active' if period == 'weekly' }}">Weekly</a>
+            <a href="/reports?period=monthly" class="tab-btn {{ 'active' if period == 'monthly' }}">Monthly</a>
+        </div>
+
+        <!-- Revenue Report -->
+        <div class="report-box">
+            <h3>💰 Revenue — {{ report.period }}</h3>
+            <div class="stat-row">
+                <div class="stat-item"><span>Ksh {{ report.total_revenue }}</span><p>Total Revenue</p></div>
+                <div class="stat-item"><span>{{ report.count }}</span><p>Transactions</p></div>
+            </div>
+            {% if report.transactions %}
+            <table>
+                <tr><th>#</th><th>Bus</th><th>Exit Time</th><th>Duration (min)</th><th>Pass</th><th>Paid (Ksh)</th></tr>
+                {% for t in report.transactions %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ t.bus_number }}</td>
+                    <td>{{ t.exit_time }}</td>
+                    <td>{{ t.duration_minutes }}</td>
+                    <td>{{ t.pass_used }}</td>
+                    <td>{{ t.amount_paid }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+            {% else %}
+            <p style="color:#999;">No transactions for this period.</p>
+            {% endif %}
+        </div>
+
+        <!-- Occupancy + Frequent -->
+        <div class="two-col">
+            <div class="report-box">
+                <h3>🅿️ Occupancy</h3>
+                <div class="stat-row">
+                    <div class="stat-item"><span>{{ occupancy.total }}</span><p>Total</p></div>
+                    <div class="stat-item"><span style="color:#1e7e34;">{{ occupancy.available }}</span><p>Free</p></div>
+                    <div class="stat-item"><span style="color:#c5221f;">{{ occupancy.occupied }}</span><p>Occupied</p></div>
+                </div>
+                <p style="font-size:14px;">Occupancy Rate: <strong>{{ occupancy.occupancy_pct }}%</strong></p>
+            </div>
+
+            <div class="report-box">
+                <h3>🚌 Frequent Buses</h3>
+                {% if freq_buses %}
+                <ul class="freq-list">
+                    {% for bus, count in freq_buses %}
+                    <li><span>{{ bus }}</span><span class="freq-count">{{ count }} visits</span></li>
+                    {% endfor %}
+                </ul>
+                {% else %}<p style="color:#999;">No data yet.</p>{% endif %}
+            </div>
+        </div>
+
+        <div class="report-box">
+            <h3>👤 Frequent Staff (by transactions recorded)</h3>
+            {% if freq_drivers %}
+            <ul class="freq-list">
+                {% for staff, count in freq_drivers %}
+                <li><span>{{ staff }}</span><span class="freq-count">{{ count }} recorded</span></li>
+                {% endfor %}
+            </ul>
+            {% else %}<p style="color:#999;">No data yet.</p>{% endif %}
+        </div>
+
+        <a href="/reports/export" class="export-btn">⬇️ Export All Transactions as CSV</a>
+    </div>
+    <footer><p>Designed by Daose David</p></footer>
+</body>
+</html>

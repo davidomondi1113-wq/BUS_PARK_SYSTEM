@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ action }} Driver - Kisumu Mpya Bus Park</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; }
+        header { background: #1a73e8; color: white; padding: 20px; text-align: center; }
+        nav a { margin: 0 15px; color: white; text-decoration: none; font-weight: bold; }
+        nav a:hover { color: #ffd700; }
+        .container { max-width: 520px; margin: 40px auto 80px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        h2 { color: #1a73e8; }
+        label { font-weight: bold; display: block; margin-top: 12px; font-size: 14px; }
+        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; box-sizing: border-box; }
+        button[type="submit"] { margin-top: 20px; width: 100%; padding: 12px; background: #1a73e8; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold; }
+        button[type="submit"]:hover { background: #1558b0; }
+        .back { display: inline-block; margin-top: 15px; color: #1a73e8; text-decoration: none; }
+        footer { background: #333; color: white; text-align: center; padding: 15px; position: fixed; width: 100%; bottom: 0; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Kisumu Mpya Bus Park</h1>
+        <nav>
+            <a href="/">Home</a>
+            <a href="/bus_entry">Bus Entry</a>
+            <a href="/bus_exit">Bus Exit</a>
+            <a href="/slots">Slots</a>
+            <a href="/drivers">Drivers</a>
+            <a href="/reports">Reports</a>
+        </nav>
+    </header>
+    <div class="container">
+        <h2>{{ action }} Driver / Conductor</h2>
+        <form method="POST">
+            <label>Full Name</label>
+            <input type="text" name="name" value="{{ driver.name if driver else '' }}" placeholder="e.g. John Otieno" required>
+
+            <label>Role</label>
+            <select name="role">
+                <option value="Driver" {{ 'selected' if driver and driver.role == 'Driver' }}>Driver</option>
+                <option value="Conductor" {{ 'selected' if driver and driver.role == 'Conductor' }}>Conductor</option>
+            </select>
+
+            <label>Phone Number</label>
+            <input type="text" name="phone" value="{{ driver.phone if driver else '' }}" placeholder="e.g. 0712 345 678" required>
+
+            <label>Email Address</label>
+            <input type="text" name="email" value="{{ driver.email if driver else '' }}" placeholder="e.g. john@example.com">
+
+            <label>License Number</label>
+            <input type="text" name="license_number" value="{{ driver.license_number if driver else '' }}" placeholder="e.g. DL-2024-00123">
+
+            <label>Assign to Bus (optional)</label>
+            <select name="assigned_bus">
+                <option value="">-- None --</option>
+                {% for bus in parked_buses %}
+                <option value="{{ bus.bus_number }}" {{ 'selected' if driver and driver.assigned_bus == bus.bus_number }}>
+                    {{ bus.bus_number }}
+                </option>
+                {% endfor %}
+            </select>
+
+            <button type="submit">{{ action }} Driver</button>
+        </form>
+        <a href="/drivers" class="back">← Back to Drivers</a>
+    </div>
+    <footer><p>Designed by Daose David</p></footer>
+</body>
+</html>

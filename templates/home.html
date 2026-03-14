@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Kisumu Mpya Bus Park</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Montserrat:wght@600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* --- Reset & Base --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Roboto', sans-serif; background-color: #f4f6f8; color: #333; overflow-x: hidden; }
+        a { text-decoration: none; }
+
+        /* --- Header / Navbar --- */
+        header { background: linear-gradient(135deg, #1a73e8, #34a853); color: white; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        header h1 { font-family: 'Montserrat', sans-serif; font-size: 28px; }
+        nav a { margin-left: 20px; font-weight: 600; color: white; transition: 0.3s; }
+        nav a:hover { color: #fbbc05; }
+
+        /* --- Animated Hero Section --- */
+        .hero { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 90vh; text-align: center; color: white; overflow: hidden; }
+
+        /* Moving Gradient Background */
+        .gradient-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(270deg, #1a73e8, #34a853, #fbbc05, #ea4335); background-size: 800% 800%; animation: gradientMove 20s ease infinite; z-index: 0; }
+        @keyframes gradientMove { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+        /* Floating Shapes */
+        .shape { position: absolute; border-radius: 50%; opacity: 0.3; animation: floatShape 20s linear infinite; }
+        .shape:nth-child(1) { width: 80px; height: 80px; background: #fbbc05; top: 10%; left: 20%; animation-duration: 12s; }
+        .shape:nth-child(2) { width: 50px; height: 50px; background: #ea4335; top: 50%; left: 10%; animation-duration: 18s; }
+        .shape:nth-child(3) { width: 100px; height: 100px; background: #34a853; top: 30%; left: 70%; animation-duration: 22s; }
+        .shape:nth-child(4) { width: 60px; height: 60px; background: #1a73e8; top: 70%; left: 50%; animation-duration: 16s; }
+        @keyframes floatShape { 0% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-60px) rotate(180deg); } 100% { transform: translateY(0) rotate(360deg); } }
+
+        /* Particle Canvas (WebGL-style) */
+        .particle-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+
+        /* Hero Content */
+        .hero-content { position: relative; z-index: 2; animation: fadeUp 1.5s ease forwards; }
+        @keyframes fadeUp { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
+        .hero h2 { font-size: 48px; margin-bottom: 20px; text-shadow: 2px 2px 8px rgba(0,0,0,0.5); }
+        .hero p { font-size: 20px; margin-bottom: 30px; max-width: 600px; }
+        .hero .btn { background-color: #fbbc05; color: #1a73e8; padding: 12px 28px; border-radius: 8px; font-weight: bold; transition: 0.3s; margin: 0 8px; }
+        .hero .btn:hover { background-color: #fff; color: #1a73e8; }
+
+        /* --- Features Section --- */
+        .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 30px; padding: 60px 40px; text-align: center; }
+        .feature-card { background: white; padding: 30px 20px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.08); transition: transform 0.3s, box-shadow 0.3s; opacity: 0; transform: translateY(20px); animation: fadeIn 1s forwards; }
+        .feature-card:nth-child(1) { animation-delay: 0.2s; }
+        .feature-card:nth-child(2) { animation-delay: 0.4s; }
+        .feature-card:nth-child(3) { animation-delay: 0.6s; }
+        .feature-card:nth-child(4) { animation-delay: 0.8s; }
+        .feature-card:hover { transform: translateY(-8px); box-shadow: 0 12px 25px rgba(0,0,0,0.12); }
+        .feature-card h3 { margin-bottom: 12px; color: #1a73e8; }
+        .feature-card p { font-size: 15px; color: #555; }
+        @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
+
+        /* --- Dashboard Section --- */
+        .dashboard { padding: 60px 40px 80px; }
+        .dashboard h2 { color: #1a73e8; margin-bottom: 24px; text-align: center; }
+        .summary { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); margin-bottom: 40px; }
+        .s-card { padding: 18px; border-radius: 14px; text-align: center; box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
+        .s-card h3 { margin: 0 0 8px 0; font-size: 28px; }
+        .s-card p { margin: 0; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+        .c-blue   { background: #e8f0fe; color: #1a73e8; }
+        .c-green  { background: #e6f4ea; color: #1e7e34; }
+        .c-red    { background: #fce8e6; color: #c5221f; }
+        .c-yellow { background: #fff3cd; color: #856404; }
+        .btn-center { text-align: center; margin-bottom: 40px; }
+        .btn-secondary { display: inline-block; padding: 12px 22px; margin: 8px; background: white; color: #1a73e8; border-radius: 8px; border: 1px solid rgba(26,115,232,0.3); font-weight: bold; }
+        .btn-secondary:hover { background: rgba(255,255,255,0.9); }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        th, td { padding: 12px 14px; border: 1px solid #e2e8f0; text-align: left; font-size: 14px; }
+        th { background: #1a73e8; color: white; }
+        tr:nth-child(even) { background: #f9f9f9; }
+        .no-data { text-align: center; color: #6b7280; margin-top: 30px; }
+
+        /* --- Footer with Social Icons --- */
+        footer { background: #1a73e8; color: white; padding: 30px 40px; text-align: center; font-size: 14px; }
+        .social-icons { margin-top: 10px; }
+        .social-icons a { color: white; margin: 0 10px; font-size: 22px; transition: 0.3s; }
+        .social-icons a:hover { color: #fbbc05; }
+
+        /* --- Responsive --- */
+        @media(max-width: 768px) {
+            .hero h2 { font-size: 36px; }
+            .hero p { font-size: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header / Navbar -->
+    <header>
+        <h1>Kiusumu Mpya Bus Park</h1>
+        <nav>
+            <a href="/bus_entry">Bus Entry</a>
+            <a href="/bus_exit">Bus Exit</a>
+            <a href="/slots">Slots</a>
+            <a href="/drivers">Drivers</a>
+            <a href="/transactions">Transactions</a>
+            <a href="/reports">Reports</a>
+            {% if user and user.role == 'Admin' %}<a href="/users">Users</a>{% endif %}
+            <a href="/logout">Logout ({{ user.username if user }})</a>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="gradient-bg"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <canvas class="particle-canvas"></canvas>
+
+        <div class="hero-content">
+            <h2>Seamless Bus Management in Kisumu</h2>
+            <p>Track bus entries, manage parking slots, calculate fees, and generate reports — all in one place.</p>
+            <a href="/bus_entry" class="btn">Enter a Bus</a>
+            <a href="/bus_exit" class="btn">Exit a Bus</a>
+        </div>
+    </section>
+
+    <!-- Dashboard Section -->
+    <section class="dashboard">
+        <h2>Welcome, {{ user.name if user }}</h2>
+
+        <div class="summary">
+            <div class="s-card c-blue"><h3>{{ occupancy.total }}</h3><p>Total Slots</p></div>
+            <div class="s-card c-green"><h3>{{ occupancy.available }}</h3><p>Available</p></div>
+            <div class="s-card c-red"><h3>{{ occupancy.occupied }}</h3><p>Occupied</p></div>
+            <div class="s-card c-yellow"><h3>Ksh {{ total_revenue }}</h3><p>Total Revenue</p></div>
+        </div>
+
+        <div class="btn-center">
+            <a href="/bus_entry" class="btn-secondary">🚌 Enter a Bus</a>
+            <a href="/bus_exit" class="btn-secondary">🚪 Exit a Bus</a>
+            <a href="/slots" class="btn-secondary">🅿️ View Slots</a>
+            <a href="/drivers" class="btn-secondary">👤 Drivers</a>
+            <a href="/transactions" class="btn-secondary">💳 Transactions</a>
+            <a href="/reports" class="btn-secondary">📊 Reports</a>
+        </div>
+
+        {% if buses %}
+        <div class="table-wrap">
+            <table>
+                <tr><th>#</th><th>Bus Number</th><th>Type</th><th>Route</th><th>Owner</th><th>Slot</th><th>Entry Time</th></tr>
+                {% for bus in buses %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ bus.bus_number }}</td>
+                    <td>{{ bus.bus_type }}</td>
+                    <td>{{ bus.route }}</td>
+                    <td>{{ bus.owner }}</td>
+                    <td>{{ bus.slot }}</td>
+                    <td>{{ bus.entry_time.strftime('%Y-%m-%d %H:%M') if bus.entry_time }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+        {% else %}
+        <p class="no-data">No buses currently parked.</p>
+        {% endif %}
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p>Designed by <a href="#" style="color: #fbbc05;">Daose David</a> | &copy; 2026 Kiusumu Mpya Bus Park</p>
+        <div class="social-icons">
+            <a href="https://wa.me/254123456789" target="_blank" rel="noreferrer"><i class="fab fa-whatsapp"></i></a>
+            <a href="mailto:info@kiusumupark.com"><i class="fas fa-envelope"></i></a>
+            <a href="tel:+254123456789"><i class="fas fa-phone"></i></a>
+        </div>
+    </footer>
+
+    <script>
+        // Particle effect (WebGL-style moving dots)
+        const canvas = document.querySelector('.particle-canvas');
+        const ctx = canvas.getContext('2d');
+        const particles = [];
+        const particleCount = 80;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = document.querySelector('.hero').offsetHeight;
+        }
+
+        function randomBetween(min, max) { return Math.random() * (max - min) + min; }
+
+        function createParticles() {
+            particles.length = 0;
+            for (let i = 0; i < particleCount; i++) {
+                particles.push({
+                    x: randomBetween(0, canvas.width),
+                    y: randomBetween(0, canvas.height),
+                    radius: randomBetween(1.5, 3.5),
+                    speed: randomBetween(0.15, 0.5),
+                    angle: randomBetween(0, Math.PI * 2),
+                    alpha: randomBetween(0.15, 0.55),
+                });
+            }
+        }
+
+        function drawParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach((p) => {
+                p.x += Math.cos(p.angle) * p.speed;
+                p.y += Math.sin(p.angle) * p.speed;
+                p.angle += 0.002;
+
+                if (p.x < -20) p.x = canvas.width + 20;
+                if (p.x > canvas.width + 20) p.x = -20;
+                if (p.y < -20) p.y = canvas.height + 20;
+                if (p.y > canvas.height + 20) p.y = -20;
+
+                const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.radius * 2);
+                gradient.addColorStop(0, `rgba(255,255,255,${p.alpha})`);
+                gradient.addColorStop(1, 'rgba(255,255,255,0)');
+
+                ctx.beginPath();
+                ctx.fillStyle = gradient;
+                ctx.arc(p.x, p.y, p.radius * 2, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        function animate() {
+            drawParticles();
+            requestAnimationFrame(animate);
+        }
+
+        function updateHeroParallax() {
+            const hero = document.querySelector('.hero');
+            const content = hero.querySelector('.hero-content');
+            const offset = window.scrollY * 0.15;
+            content.style.transform = `translateY(${offset}px)`;
+        }
+
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            createParticles();
+        });
+
+        window.addEventListener('scroll', updateHeroParallax);
+
+        resizeCanvas();
+        createParticles();
+        animate();
+    </script>
+</body>
+</html>
