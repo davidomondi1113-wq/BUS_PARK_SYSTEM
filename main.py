@@ -1,26 +1,36 @@
 # main.py
-from flask import Flask, render_template, request, redirect, url_for, session, Response
+from flask import Flask, render_template, request, redirect, url_for, session, Response, jsonify
 from datetime import datetime
 import uuid
-import data
-import drivers as drv
+
+from database import db
+from models import User, Slot, Bus, Transaction, Driver, Setting
+from flask_migrate import Migrate
+
 import slots as slts
 import transactions as txns
-import reports as rpts
+import drivers as drv
 import users as usr
+import reports as rpts
 
 app = Flask(__name__)
 app.secret_key = "kisumu_bus_park_secret"
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///buspark.db"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
+# Initialize database extensions
+db.init_app(app)
+migrate = Migrate(app, db)
 
 # ---------------------------
 # Setup helpers
 # ---------------------------
-
 def ensure_default_user():
     """Ensure there is at least one user (admin) to log in with."""
-    if not data.users:
-        usr.add_user("admin", "admin123", "Admin", "Administrator")
+    if User.query.count() == 0:
+        admin = User(username="admin", password="admin123", role="Admin", name="Administrator")
+        db.session.add(admin)
+        db.session.commit()
         print("[INFO] Created default admin user: admin/admin123")
 
 
@@ -29,8 +39,44 @@ def _generate_receipt_number():
     return f"R{datetime.now().strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:6].upper()}"
 
 
-# Ensure a default login exists on startup.
-ensure_default_user()
+def get_setting(key, default=None):
+    setting = Setting.query.get(key)
+    return setting.value if setting else default
+
+
+def set_setting(key, value):
+    setting = Setting.query.get(key)
+    if not setting:
+        setting = Setting(key=key, value=str(value))
+        db.session.add(setting)
+    else:
+        setting.value = str(value)
+    db.session.commit()
+
+
+def ensure_settings():
+    # Ensure there is a park name and slot count configured.
+    set_setting("park_name", get_setting("park_name", "Kisumu Mpya Bus Park"))
+    set_setting("total_slots", get_setting("total_slots", "100"))
+
+
+def ensure_slots():
+    # Ensure slots exist up to the configured total.
+    total_slots = int(get_setting("total_slots", "100"))
+    existing = {s.slot_number for s in Slot.query.all()}
+    for i in range(1, total_slots + 1):
+        if i not in existing:
+            slot = Slot(slot_number=i, status="available")
+            db.session.add(slot)
+    db.session.commit()
+
+
+# Ensure the database structure and minimal configuration exists on startup.
+with app.app_context():
+    db.create_all()
+    ensure_settings()
+    ensure_default_user()
+    ensure_slots()
 
 
 # ---------------------------
@@ -55,28 +101,43 @@ def login_required(f):
 @app.route("/login", methods=["GET", "POST"])
 def login():
     error = None
-    setup_mode = not bool(data.users)
+    setup_mode = User.query.count() == 0
 
     if setup_mode and request.method == "POST":
-        # First-time setup: create the first admin user
+        # First-time setup: create the first admin user and configure park settings
         username = request.form.get("username", "admin").strip() or "admin"
         password = request.form.get("password", "admin123")
         name = request.form.get("name", "Administrator").strip() or "Administrator"
-        usr.add_user(username, password, "Admin", name)
+
+        park_name = request.form.get("park_name", "Kisumu Mpya Bus Park").strip() or "Kisumu Mpya Bus Park"
+        try:
+            total_slots = int(request.form.get("total_slots", 100))
+        except ValueError:
+            total_slots = 100
+
+        set_setting("park_name", park_name)
+        set_setting("total_slots", str(total_slots))
+        ensure_slots()
+
+        user = User(username=username, password=password, role="Admin", name=name)
+        db.session.add(user)
+        db.session.commit()
         return redirect(url_for("login"))
 
     if request.method == "POST" and not setup_mode:
-        user = usr.login(request.form["username"], request.form["password"])
-        if user:
-            session["user"] = {
-                "username": request.form["username"],
-                "role": user["role"],
-                "name": user["name"],
-            }
+        user = User.query.filter_by(username=request.form["username"]).first()
+        if user and user.password == request.form["password"]:
+            session["user"] = {"username": user.username, "role": user.role, "name": user.name}
             return redirect(url_for("home"))
         error = "Invalid username or password."
 
-    return render_template("login.html", error=error, setup=setup_mode)
+    return render_template(
+        "login.html",
+        error=error,
+        setup=setup_mode,
+        park_name=get_setting("park_name", "Kisumu Mpya Bus Park"),
+        total_slots=get_setting("total_slots", "100"),
+    )
 
 @app.route("/logout")
 def logout():
@@ -91,10 +152,12 @@ def logout():
 @login_required
 def home():
     occ = rpts.occupancy_report()
+    parked_buses = Bus.query.filter_by(status="Parked").order_by(Bus.entry_time.desc()).all()
     return render_template("home.html",
-        buses=data.parked_buses,
+        buses=parked_buses,
         occupancy=occ,
         total_revenue=txns.get_total_revenue(),
+        park_name=get_setting("park_name", "Kisumu Mpya Bus Park"),
         user=current_user()
     )
 
@@ -118,7 +181,7 @@ def bus_entry():
         if not driver_phone:
             message  = "Driver phone number is required to process parking fee."
             msg_type = "error"
-        elif any(b["bus_number"] == bus_number for b in data.parked_buses):
+        elif Bus.query.filter_by(bus_number=bus_number, status="Parked").first():
             message  = f"Bus {bus_number} is already parked!"
             msg_type = "error"
         elif slts.is_full():
@@ -128,17 +191,20 @@ def bus_entry():
             receipt = _generate_receipt_number()
             entry_time = datetime.now()
             slot = slts.assign_slot(bus_number)
-            data.parked_buses.append({
-                "bus_number":     bus_number,
-                "bus_type":       bus_type,
-                "route":          route,
-                "owner":          owner,
-                "driver_name":    driver_name,
-                "driver_phone":   driver_phone,
-                "receipt_number": receipt,
-                "slot":           slot["slot_number"],
-                "entry_time":     entry_time,
-            })
+
+            new_bus = Bus(
+                bus_number=bus_number,
+                bus_type=bus_type,
+                route=route,
+                owner=owner,
+                slot_number=(slot.get("slot_number") if slot else None),
+                entry_time=entry_time,
+                status="Parked",
+                receipt_number=receipt,
+                driver_phone=driver_phone,
+            )
+            db.session.add(new_bus)
+            db.session.commit()
 
             txns.record_transaction(
                 bus_number=bus_number,
@@ -152,7 +218,6 @@ def bus_entry():
                 fixed_fee=100,
             )
 
-            data.save_data()
             return redirect(url_for("receipt", receipt_number=receipt))
     return render_template("bus_entry.html", message=message, msg_type=msg_type, user=current_user())
 
@@ -168,7 +233,7 @@ def receipt(receipt_number):
         return render_template("receipt.html", error="Receipt not found.", receipt=None, user=current_user())
 
     # Try to locate an active parked bus matching this receipt (optional)
-    bus = next((b for b in data.parked_buses if b.get("receipt_number") == receipt_number), None)
+    bus = Bus.query.filter_by(receipt_number=receipt_number).first()
     return render_template("receipt.html", txn=txn, bus=bus, user=current_user())
 
 
@@ -184,37 +249,34 @@ def bus_exit():
     if request.method == "POST":
         bus_number     = request.form["bus_number"].strip().upper()
         receipt_number = request.form.get("receipt_number", "").strip().upper()
-        bus = next((b for b in data.parked_buses if b["bus_number"] == bus_number), None)
+        bus = Bus.query.filter_by(bus_number=bus_number, status="Parked").first()
 
         if not bus:
             message  = f"Bus {bus_number} not found in park."
             msg_type = "error"
-        elif not receipt_number or receipt_number != bus.get("receipt_number"):
+        elif not receipt_number or receipt_number != (bus.receipt_number or ""):
             message  = "Receipt number does not match. Please provide the correct receipt to exit."
             msg_type = "error"
         else:
             exit_time = datetime.now()
-            entry_time = bus.get("entry_time", exit_time)
-            if isinstance(entry_time, str):
-                try:
-                    entry_time = datetime.strptime(entry_time, "%Y-%m-%d %H:%M")
-                except Exception:
-                    entry_time = exit_time
+            entry_time = bus.entry_time or exit_time
 
             txn = txns.record_transaction(
                 bus_number=bus_number,
-                bus_type=bus.get("bus_type", "Standard"),
+                bus_type=bus.bus_type or "Standard",
                 entry_time=entry_time,
                 exit_time=exit_time,
                 pass_type="None",
                 recorded_by=current_user()["username"],
                 receipt_number=receipt_number,
-                driver_phone=bus.get("driver_phone"),
+                driver_phone=bus.driver_phone,
                 fixed_fee=0,
             )
-            data.parked_buses.remove(bus)
+            bus.status = "Exited"
+            bus.exit_time = exit_time
+            db.session.commit()
+
             slts.free_slot(bus_number)
-            data.save_data()
             message = (
                 f"Bus {bus_number} exited. Receipt {receipt_number} confirmed. "
                 f"No additional fee due (payment already made at entry)."
@@ -231,9 +293,10 @@ def bus_exit():
 @app.route("/slots")
 @login_required
 def slots_view():
+    total_slots = int(get_setting("total_slots", "100"))
     return render_template("slots.html",
         slots=slts.get_all_slots(),
-        total=slts.TOTAL_SLOTS,
+        total=total_slots,
         available=slts.get_available_count(),
         occupied=slts.get_occupied_count(),
         is_full=slts.is_full(),
@@ -293,6 +356,35 @@ def export_csv():
 
 
 # ---------------------------
+# API Endpoints (JSON)
+# ---------------------------
+
+@app.route("/api/slots")
+@login_required
+def api_slots():
+    total_slots = int(get_setting("total_slots", "100"))
+    return jsonify({
+        "slots": slts.get_all_slots(),
+        "total": total_slots,
+        "available": slts.get_available_count(),
+        "occupied": slts.get_occupied_count(),
+    })
+
+
+@app.route("/api/buses")
+@login_required
+def api_buses():
+    buses = [b.to_dict() for b in Bus.query.filter_by(status="Parked").order_by(Bus.entry_time.desc()).all()]
+    return jsonify({"buses": buses})
+
+
+@app.route("/api/transactions")
+@login_required
+def api_transactions():
+    return jsonify({"transactions": txns.get_all_transactions()})
+
+
+# ---------------------------
 # Drivers
 # ---------------------------
 @app.route("/drivers")
@@ -300,7 +392,7 @@ def export_csv():
 def drivers_list():
     return render_template("drivers.html",
         drivers=drv.get_all_drivers(),
-        parked_buses=data.parked_buses,
+        parked_buses=Bus.query.filter_by(status="Parked").all(),
         user=current_user()
     )
 
@@ -318,7 +410,7 @@ def driver_add():
         )
         return redirect(url_for("drivers_list"))
     return render_template("driver_form.html", action="Add", driver=None,
-                           parked_buses=data.parked_buses, message=None, user=current_user())
+                           parked_buses=Bus.query.filter_by(status="Parked").all(), message=None, user=current_user())
 
 @app.route("/drivers/edit/<int:driver_id>", methods=["GET", "POST"])
 @login_required
@@ -335,7 +427,7 @@ def driver_edit(driver_id):
         )
         return redirect(url_for("drivers_list"))
     return render_template("driver_form.html", action="Edit", driver=driver,
-                           parked_buses=data.parked_buses, message=None, user=current_user())
+                           parked_buses=Bus.query.filter_by(status="Parked").all(), message=None, user=current_user())
 
 @app.route("/drivers/delete/<int:driver_id>", methods=["POST"])
 @login_required

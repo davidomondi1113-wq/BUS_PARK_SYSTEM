@@ -1,7 +1,8 @@
 # users.py
 # Handles staff/admin login, role-based access, and password reset
 
-import data
+from database import db
+from models import User
 
 ROLE_PERMISSIONS = {
     "Admin": ["home", "bus_entry", "bus_exit", "slots", "drivers",
@@ -13,59 +14,39 @@ ROLE_PERMISSIONS = {
 
 def login(username, password):
     """Validate credentials. Returns user dict or None."""
-    user = data.users.get(username)
-    if user and user["password"] == password:
-        data.logged_in_user["username"] = username
-        data.logged_in_user["role"] = user["role"]
-        data.logged_in_user["name"] = user["name"]
-        return user
+    user = User.query.filter_by(username=username).first()
+    if user and user.password == password:
+        return user.to_dict()
     return None
-
-
-def logout():
-    data.logged_in_user.update({"username": None, "role": None, "name": None})
-
-
-def get_current_user():
-    return data.logged_in_user if data.logged_in_user["username"] else None
-
-
-def is_logged_in():
-    return data.logged_in_user["username"] is not None
-
-
-def has_permission(page):
-    role = data.logged_in_user.get("role")
-    return page in ROLE_PERMISSIONS.get(role, [])
 
 
 def reset_password(username, new_password):
     """Admin-only: reset a user's password."""
-    if username in data.users:
-        data.users[username]["password"] = new_password
-        data.save_data()
+    user = User.query.filter_by(username=username).first()
+    if user:
+        user.password = new_password
+        db.session.commit()
         return True
     return False
 
 
 def get_all_users():
-    return [
-        {"username": u, "role": v["role"], "name": v["name"]}
-        for u, v in data.users.items()
-    ]
+    return [u.to_dict() for u in User.query.order_by(User.username).all()]
 
 
 def add_user(username, password, role, name):
-    if username in data.users:
+    if User.query.filter_by(username=username).first():
         return False
-    data.users[username] = {"password": password, "role": role, "name": name}
-    data.save_data()
+    user = User(username=username, password=password, role=role, name=name)
+    db.session.add(user)
+    db.session.commit()
     return True
 
 
 def delete_user(username):
-    if username in data.users and username != "admin":
-        del data.users[username]
-        data.save_data()
+    user = User.query.filter_by(username=username).first()
+    if user and user.username != "admin":
+        db.session.delete(user)
+        db.session.commit()
         return True
     return False

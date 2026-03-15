@@ -4,8 +4,9 @@
 import csv
 import io
 from datetime import datetime, timedelta
-from collections import Counter
-import data
+
+from database import db
+from models import Transaction, Slot
 
 
 def _parse_date(date_str):
@@ -13,12 +14,11 @@ def _parse_date(date_str):
 
 
 def _txns_in_range(start_date, end_date):
-    result = []
-    for t in data.transactions:
-        d = _parse_date(t["date"])
-        if start_date <= d <= end_date:
-            result.append(t)
-    return result
+    txns = Transaction.query.filter(
+        Transaction.exit_time >= datetime.combine(start_date, datetime.min.time()),
+        Transaction.exit_time <= datetime.combine(end_date, datetime.max.time())
+    ).all()
+    return txns
 
 
 # ---------------------------
@@ -31,7 +31,7 @@ def daily_report(date=None):
     return {
         "period": str(date),
         "transactions": txns,
-        "total_revenue": round(sum(t["amount_paid"] for t in txns), 2),
+        "total_revenue": round(sum(t.amount_paid for t in txns), 2),
         "count": len(txns),
     }
 
@@ -44,7 +44,7 @@ def weekly_report(date=None):
     return {
         "period": f"{start} to {end}",
         "transactions": txns,
-        "total_revenue": round(sum(t["amount_paid"] for t in txns), 2),
+        "total_revenue": round(sum(t.amount_paid for t in txns), 2),
         "count": len(txns),
     }
 
@@ -62,7 +62,7 @@ def monthly_report(year=None, month=None):
     return {
         "period": f"{year}-{month:02d}",
         "transactions": txns,
-        "total_revenue": round(sum(t["amount_paid"] for t in txns), 2),
+        "total_revenue": round(sum(t.amount_paid for t in txns), 2),
         "count": len(txns),
     }
 
@@ -72,11 +72,12 @@ def monthly_report(year=None, month=None):
 # ---------------------------
 
 def occupancy_report():
-    occupied = sum(1 for s in data.slots if s["status"] == "occupied")
-    available = data.TOTAL_SLOTS - occupied
-    pct = round((occupied / data.TOTAL_SLOTS) * 100, 1) if data.TOTAL_SLOTS else 0
+    total = Slot.query.count()
+    occupied = Slot.query.filter_by(status="occupied").count()
+    available = max(total - occupied, 0)
+    pct = round((occupied / total) * 100, 1) if total else 0
     return {
-        "total": data.TOTAL_SLOTS,
+        "total": total,
         "occupied": occupied,
         "available": available,
         "occupancy_pct": pct,
@@ -88,13 +89,26 @@ def occupancy_report():
 # ---------------------------
 
 def frequent_buses(top_n=5):
-    counts = Counter(t["bus_number"] for t in data.transactions)
-    return counts.most_common(top_n)
+    # Return most common bus_number in transactions
+    rows = (
+        db.session.query(Transaction.bus_number, db.func.count(Transaction.bus_number).label("count"))
+        .group_by(Transaction.bus_number)
+        .order_by(db.desc("count"))
+        .limit(top_n)
+        .all()
+    )
+    return [(r.bus_number, r.count) for r in rows]
 
 
 def frequent_drivers(top_n=5):
-    counts = Counter(t["recorded_by"] for t in data.transactions)
-    return counts.most_common(top_n)
+    rows = (
+        db.session.query(Transaction.recorded_by, db.func.count(Transaction.recorded_by).label("count"))
+        .group_by(Transaction.recorded_by)
+        .order_by(db.desc("count"))
+        .limit(top_n)
+        .all()
+    )
+    return [(r.recorded_by, r.count) for r in rows]
 
 
 # ---------------------------
@@ -106,8 +120,11 @@ def export_transactions_csv():
     output = io.StringIO()
     fieldnames = ["id", "bus_number", "bus_type", "entry_time", "exit_time",
                   "duration_minutes", "gross_fee", "discount_pct",
-                  "discount_amt", "amount_paid", "pass_used", "recorded_by", "date"]
+                  "discount_amt", "amount_paid", "pass_used", "recorded_by", "receipt_number", "driver_phone", "date"]
     writer = csv.DictWriter(output, fieldnames=fieldnames, extrasaction="ignore")
     writer.writeheader()
-    writer.writerows(data.transactions)
+
+    for txn in Transaction.query.order_by(Transaction.id.desc()).all():
+        writer.writerow(txn.to_dict())
+
     return output.getvalue()

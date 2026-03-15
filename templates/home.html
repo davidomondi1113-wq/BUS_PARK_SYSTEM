@@ -92,7 +92,7 @@
 <body>
     <!-- Header / Navbar -->
     <header>
-        <h1>Kiusumu Mpya Bus Park</h1>
+        <h1>{{ park_name or 'Kisumu Mpya Bus Park' }}</h1>
         <nav>
             <a href="/bus_entry">Bus Entry</a>
             <a href="/bus_exit">Bus Exit</a>
@@ -127,10 +127,10 @@
         <h2>Welcome, {{ user.name if user }}</h2>
 
         <div class="summary">
-            <div class="s-card c-blue"><h3>{{ occupancy.total }}</h3><p>Total Slots</p></div>
-            <div class="s-card c-green"><h3>{{ occupancy.available }}</h3><p>Available</p></div>
-            <div class="s-card c-red"><h3>{{ occupancy.occupied }}</h3><p>Occupied</p></div>
-            <div class="s-card c-yellow"><h3>Ksh {{ total_revenue }}</h3><p>Total Revenue</p></div>
+            <div class="s-card c-blue"><h3 id="total-slots">{{ occupancy.total }}</h3><p>Total Slots</p></div>
+            <div class="s-card c-green"><h3 id="available-slots">{{ occupancy.available }}</h3><p>Available</p></div>
+            <div class="s-card c-red"><h3 id="occupied-slots">{{ occupancy.occupied }}</h3><p>Occupied</p></div>
+            <div class="s-card c-yellow"><h3 id="total-revenue">Ksh {{ total_revenue }}</h3><p>Total Revenue</p></div>
         </div>
 
         <div class="btn-center">
@@ -153,7 +153,7 @@
                     <td>{{ bus.bus_type }}</td>
                     <td>{{ bus.route }}</td>
                     <td>{{ bus.owner }}</td>
-                    <td>{{ bus.slot }}</td>
+                    <td>{{ bus.slot_number }}</td>
                     <td>{{ bus.entry_time.strftime('%Y-%m-%d %H:%M') if bus.entry_time }}</td>
                 </tr>
                 {% endfor %}
@@ -166,11 +166,12 @@
 
     <!-- Footer -->
     <footer>
-        <p>Designed by <a href="#" style="color: #fbbc05;">Daose David</a> | &copy; 2026 Kiusumu Mpya Bus Park</p>
+        <p>Designed by <a href="#" style="color: #fbbc05;">Daose David</a> | &copy; 2026 {{ park_name or 'Kisumu Mpya Bus Park' }}</p>
         <div class="social-icons">
-            <a href="https://wa.me/254123456789" target="_blank" rel="noreferrer"><i class="fab fa-whatsapp"></i></a>
-            <a href="mailto:info@kiusumupark.com"><i class="fas fa-envelope"></i></a>
-            <a href="tel:+254123456789"><i class="fas fa-phone"></i></a>
+            <a href="https://wa.me/254114425589" target="_blank" rel="noreferrer"><i class="fab fa-whatsapp"></i></a>
+            <a href="https://www.fb.com/l/6lp1kJRRR" target="_blank" rel="noreferrer"><i class="fab fa-facebook"></i></a>
+            <a href="tel:+254114425589"><i class="fas fa-phone"></i></a>
+            <a href="sms:+254114425589"><i class="fas fa-sms"></i></a>
         </div>
     </footer>
 
@@ -247,6 +248,31 @@
         resizeCanvas();
         createParticles();
         animate();
+
+        // Keep the dashboard stats fresh with periodic updates
+        async function refreshDashboard() {
+            try {
+                const res = await fetch('/api/slots');
+                if (!res.ok) return;
+                const data = await res.json();
+                document.getElementById('total-slots').textContent = data.total;
+                document.getElementById('available-slots').textContent = data.available;
+                document.getElementById('occupied-slots').textContent = data.occupied;
+
+                // Optionally refresh revenue from transactions
+                const revenueRes = await fetch('/api/transactions');
+                if (revenueRes.ok) {
+                    const txData = await revenueRes.json();
+                    const total = txData.transactions.reduce((sum, t) => sum + (t.amount_paid || 0), 0);
+                    document.getElementById('total-revenue').textContent = `Ksh ${total.toFixed(2)}`;
+                }
+            } catch (err) {
+                // ignore network errors
+            }
+        }
+
+        // Refresh every 20 seconds
+        setInterval(refreshDashboard, 20000);
     </script>
 </body>
 </html>

@@ -77,8 +77,6 @@ def run_web_mode():
 
 
 if __name__ == "__main__":
-    # If user passes --web or --serve, start the web UI directly
-    if "--web" in sys.argv or "--serve" in sys.argv:
-        run_web_mode()
-    else:
-        run_console_mode()
+    print("⚠️  This console script is deprecated.")
+    print("✅  Run the web app instead: python main.py")
+    print("🌐  Then visit: http://127.0.0.1:5000/login")

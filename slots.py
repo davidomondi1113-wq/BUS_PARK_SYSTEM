@@ -1,28 +1,25 @@
 # slots.py
-# Tracks parking slot availability: initialize, assign, free, capacity check, full alert
+# Tracks parking slot availability using the database
 
-import data
-
-TOTAL_SLOTS = data.TOTAL_SLOTS
+from models import Slot
+from database import db
 
 
 def get_all_slots():
-    return data.slots
+    return [s.to_dict() for s in Slot.query.order_by(Slot.slot_number).all()]
 
 
 def get_slot_by_number(slot_number):
-    for s in data.slots:
-        if s["slot_number"] == slot_number:
-            return s
-    return None
+    slot = Slot.query.filter_by(slot_number=slot_number).first()
+    return slot.to_dict() if slot else None
 
 
 def get_available_count():
-    return sum(1 for s in data.slots if s["status"] == "available")
+    return Slot.query.filter_by(status="available").count()
 
 
 def get_occupied_count():
-    return sum(1 for s in data.slots if s["status"] == "occupied")
+    return Slot.query.filter_by(status="occupied").count()
 
 
 def is_full():
@@ -30,27 +27,25 @@ def is_full():
 
 
 def assign_slot(bus_number):
-    for s in data.slots:
-        if s["status"] == "available":
-            s["status"] = "occupied"
-            s["bus_number"] = bus_number
-            data.save_data()
-            return s
-    return None
+    slot = Slot.query.filter_by(status="available").order_by(Slot.slot_number).first()
+    if not slot:
+        return None
+    slot.status = "occupied"
+    slot.bus_number = bus_number
+    db.session.commit()
+    return slot.to_dict()
 
 
 def free_slot(bus_number):
-    for s in data.slots:
-        if s["bus_number"] == bus_number:
-            s["status"] = "available"
-            s["bus_number"] = None
-            data.save_data()
-            return s
-    return None
+    slot = Slot.query.filter_by(bus_number=bus_number).first()
+    if not slot:
+        return None
+    slot.status = "available"
+    slot.bus_number = None
+    db.session.commit()
+    return slot.to_dict()
 
 
 def get_slot_for_bus(bus_number):
-    for s in data.slots:
-        if s["bus_number"] == bus_number:
-            return s
-    return None
+    slot = Slot.query.filter_by(bus_number=bus_number).first()
+    return slot.to_dict() if slot else None

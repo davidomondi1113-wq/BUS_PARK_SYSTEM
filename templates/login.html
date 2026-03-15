@@ -34,7 +34,11 @@
             <input type="text" name="username" placeholder="Enter username" required autofocus>
             {% if setup %}
                 <label>Full name</label>
-                <input type="text" name="name" placeholder="Administrator Name" value="Administrator">
+                <input type="text" name="name" placeholder="Administrator Name" value="{{ park_name or 'Administrator' }}">
+                <label>Bus Park Name</label>
+                <input type="text" name="park_name" placeholder="Bus Park name" value="{{ park_name or 'Kisumu Mpya Bus Park' }}">
+                <label>Total Slots</label>
+                <input type="number" name="total_slots" placeholder="100" value="{{ total_slots or 100 }}" min="10">
             {% endif %}
             <label>Password</label>
             <input type="password" name="password" placeholder="Enter password" required>
