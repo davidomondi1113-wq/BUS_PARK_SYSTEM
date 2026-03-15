@@ -3,58 +3,502 @@
 <head>
     <meta charset="UTF-8">
     <title>Bus Entry - Kisumu Mpya Bus Park</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Montserrat:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; }
-        header { background: #1a73e8; color: white; padding: 20px; text-align: center; }
-        nav a { margin: 0 15px; color: white; text-decoration: none; font-weight: bold; }
-        nav a:hover { color: #ffd700; }
-        .container { max-width: 500px; margin: 40px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        h2 { color: #1a73e8; }
-        label { font-weight: bold; display: block; margin-top: 12px; }
-        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; box-sizing: border-box; }
-        button { margin-top: 20px; width: 100%; padding: 12px; background: #1a73e8; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; }
-        button:hover { background: #1558b0; }
-        .success { background: #d4edda; color: #155724; padding: 10px; border-radius: 6px; margin-bottom: 15px; }
-        .back { display: inline-block; margin-top: 15px; color: #1a73e8; text-decoration: none; }
-        footer { background: #333; color: white; text-align: center; padding: 15px; position: fixed; width: 100%; bottom: 0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Roboto', sans-serif; background: #f0f4f8; min-height: 100vh; }
+
+        /* ── HEADER ── */
+        header {
+            background: linear-gradient(135deg, #1a73e8, #34a853);
+            color: white; padding: 16px 40px;
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 100;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .brand img { height: 42px; border-radius: 8px; }
+        .brand h1 { font-family: 'Montserrat', sans-serif; font-size: 20px; }
+        nav a {
+            margin-left: 18px; color: white; text-decoration: none;
+            font-weight: 600; font-size: 13px; transition: 0.3s;
+        }
+        nav a:hover { color: #fbbc05; }
+
+        /* ── PAGE LAYOUT ── */
+        .page-wrapper {
+            max-width: 780px; margin: 40px auto 60px auto; padding: 0 20px;
+        }
+        .page-title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 24px; color: #1a73e8;
+            margin-bottom: 6px;
+        }
+        .page-subtitle { color: #666; font-size: 14px; margin-bottom: 28px; }
+
+        /* ── CARD ── */
+        .card {
+            background: white; border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #1a73e8, #0d47a1);
+            color: white; padding: 20px 28px;
+            display: flex; align-items: center; gap: 12px;
+        }
+        .card-header i { font-size: 22px; }
+        .card-header h2 { font-family: 'Montserrat', sans-serif; font-size: 18px; }
+        .card-body { padding: 28px; }
+
+        /* ── FORM GRID ── */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group.full { grid-column: 1 / -1; }
+        label {
+            font-size: 13px; font-weight: 700;
+            color: #444; margin-bottom: 6px;
+        }
+        label span.req { color: #ea4335; margin-left: 3px; }
+        input, select {
+            padding: 11px 14px; border: 1.5px solid #ddd;
+            border-radius: 8px; font-size: 14px;
+            transition: border 0.2s, box-shadow 0.2s;
+            background: #fafafa;
+        }
+        input:focus, select:focus {
+            outline: none; border-color: #1a73e8;
+            box-shadow: 0 0 0 3px rgba(26,115,232,0.12);
+            background: white;
+        }
+
+        /* ── DIVIDER ── */
+        .divider {
+            display: flex; align-items: center; gap: 12px;
+            margin: 24px 0 20px;
+        }
+        .divider hr { flex: 1; border: none; border-top: 1.5px solid #eee; }
+        .divider span {
+            font-size: 12px; font-weight: 700;
+            color: #888; text-transform: uppercase; letter-spacing: 1px;
+        }
+
+        /* ── MPESA SECTION ── */
+        .mpesa-section {
+            background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
+            border: 1.5px solid #a5d6a7;
+            border-radius: 12px; padding: 20px;
+        }
+        .mpesa-header {
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 14px;
+        }
+        .mpesa-logo {
+            background: #4caf50; color: white;
+            font-weight: 900; font-size: 13px;
+            padding: 5px 10px; border-radius: 6px;
+            letter-spacing: 1px;
+        }
+        .mpesa-header h3 { font-size: 15px; color: #2e7d32; }
+
+        .fee-display {
+            display: flex; justify-content: space-between;
+            align-items: center; background: white;
+            border-radius: 8px; padding: 12px 16px;
+            margin-bottom: 14px;
+            border: 1px solid #c8e6c9;
+        }
+        .fee-label { font-size: 13px; color: #555; }
+        .fee-amount { font-size: 22px; font-weight: 700; color: #2e7d32; }
+
+        .phone-row { display: flex; gap: 10px; align-items: flex-end; }
+        .phone-row .form-group { flex: 1; margin: 0; }
+
+        /* ── BUTTONS ── */
+        .btn-pay {
+            padding: 12px 22px; background: #4caf50;
+            color: white; border: none; border-radius: 8px;
+            font-size: 14px; font-weight: 700; cursor: pointer;
+            white-space: nowrap; transition: 0.2s;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .btn-pay:hover { background: #388e3c; }
+        .btn-pay:disabled { background: #aaa; cursor: not-allowed; }
+
+        .btn-submit {
+            width: 100%; padding: 14px; margin-top: 24px;
+            background: linear-gradient(135deg, #1a73e8, #0d47a1);
+            color: white; border: none; border-radius: 10px;
+            font-size: 16px; font-weight: 700; cursor: pointer;
+            transition: 0.2s; display: flex;
+            align-items: center; justify-content: center; gap: 10px;
+        }
+        .btn-submit:hover { opacity: 0.92; transform: translateY(-1px); }
+        .btn-submit:disabled { background: #aaa; cursor: not-allowed; transform: none; }
+
+        /* ── PAYMENT STATUS ── */
+        #payment-status { margin-top: 14px; display: none; }
+
+        .status-box {
+            border-radius: 10px; padding: 14px 16px;
+            display: flex; align-items: center; gap: 12px;
+            font-size: 14px; font-weight: 600;
+        }
+        .status-pending  { background: #fff8e1; border: 1.5px solid #ffe082; color: #f57f17; }
+        .status-success  { background: #e8f5e9; border: 1.5px solid #a5d6a7; color: #2e7d32; }
+        .status-failed   { background: #fce8e6; border: 1.5px solid #ef9a9a; color: #c62828; }
+
+        .spinner {
+            width: 20px; height: 20px; border: 3px solid #ffe082;
+            border-top-color: #f57f17; border-radius: 50%;
+            animation: spin 0.8s linear infinite; flex-shrink: 0;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── ALERT ── */
+        .alert {
+            padding: 12px 16px; border-radius: 8px;
+            margin-bottom: 20px; font-size: 14px; font-weight: 600;
+        }
+        .alert-success { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+        .alert-error   { background: #fce8e6; color: #c62828; border: 1px solid #ef9a9a; }
+
+        /* ── STEPS ── */
+        .steps {
+            display: flex; gap: 0; margin-bottom: 28px;
+            border-radius: 10px; overflow: hidden;
+            border: 1px solid #e0e0e0;
+        }
+        .step {
+            flex: 1; padding: 12px 8px; text-align: center;
+            font-size: 12px; font-weight: 700; color: #aaa;
+            background: #fafafa; border-right: 1px solid #e0e0e0;
+            transition: 0.3s;
+        }
+        .step:last-child { border-right: none; }
+        .step.active { background: #1a73e8; color: white; }
+        .step.done   { background: #e8f5e9; color: #2e7d32; }
+        .step i { display: block; font-size: 16px; margin-bottom: 4px; }
+
+        /* ── FOOTER ── */
+        footer {
+            background: linear-gradient(135deg, #0d47a1, #1a73e8);
+            color: white; text-align: center;
+            padding: 20px 40px; font-size: 13px;
+        }
+        footer .social a { color: white; margin: 0 8px; font-size: 18px; transition: 0.3s; }
+        footer .social a:hover { color: #fbbc05; }
+
+        @media(max-width: 600px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .phone-row { flex-direction: column; }
+            .btn-pay { width: 100%; justify-content: center; }
+        }
     </style>
 </head>
 <body>
-    <header>
+
+<!-- HEADER -->
+<header>
+    <div class="brand">
+        <img src="/static/images/logo.png" alt="Logo">
         <h1>Kisumu Mpya Bus Park</h1>
-        <nav>
-            <a href="/">Home</a>
-            <a href="/bus_entry">Bus Entry</a>
-            <a href="/bus_exit">Bus Exit</a>
-            <a href="/slots">Slots</a>
-            <a href="/drivers">Drivers</a>
-            <a href="/reports">Reports</a>
-        </nav>
-    </header>
-    <div class="container">
-        <h2>Bus Entry</h2>
-        {% if message %}<div class="{{ msg_type }}">{{ message }}</div>{% endif %}
-        <form method="POST">
-            <label>Bus Number</label>
-            <input type="text" name="bus_number" placeholder="e.g. KBZ 123A" required>
-            <label>Bus Type</label>
-            <select name="bus_type">
-                <option value="Express">Express</option>
-                <option value="Shuttle">Shuttle</option>
-                <option value="Standard">Standard</option>
-            </select>
-            <label>Route</label>
-            <input type="text" name="route" placeholder="e.g. Kisumu - Nairobi">
-            <label>Owner / Company</label>
-            <input type="text" name="owner" placeholder="e.g. Easy Coach">
-            <label>Driver Name</label>
-            <input type="text" name="driver_name" placeholder="e.g. John Doe">
-            <label>Driver Phone</label>
-            <input type="text" name="driver_phone" placeholder="e.g. 0712 345 678" required>
-            <button type="submit">Record Entry & Issue Receipt</button>
-        </form>
-        <a href="/" class="back">← Back to Home</a>
     </div>
-    <footer><p>Designed by Daose David</p></footer>
+    <nav>
+        <a href="/"><i class="fas fa-home"></i> Home</a>
+        <a href="/bus_entry"><i class="fas fa-bus"></i> Entry</a>
+        <a href="/bus_exit"><i class="fas fa-door-open"></i> Exit</a>
+        <a href="/slots"><i class="fas fa-parking"></i> Slots</a>
+        <a href="/drivers"><i class="fas fa-id-card"></i> Drivers</a>
+        <a href="/transactions"><i class="fas fa-credit-card"></i> Transactions</a>
+        <a href="/reports"><i class="fas fa-chart-bar"></i> Reports</a>
+        {% if user and user.role == 'Admin' %}<a href="/users"><i class="fas fa-users"></i> Users</a>{% endif %}
+        <a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </nav>
+</header>
+
+<!-- PAGE -->
+<div class="page-wrapper">
+    <p class="page-title"><i class="fas fa-bus"></i> Bus Entry</p>
+    <p class="page-subtitle">Fill in vehicle details and complete M-Pesa payment to assign a parking slot.</p>
+
+    <!-- STEPS -->
+    <div class="steps">
+        <div class="step active" id="step1"><i class="fas fa-clipboard-list"></i>Vehicle Details</div>
+        <div class="step" id="step2"><i class="fas fa-mobile-alt"></i>M-Pesa Payment</div>
+        <div class="step" id="step3"><i class="fas fa-check-circle"></i>Confirm Entry</div>
+    </div>
+
+    {% if message %}
+    <div class="alert alert-{{ msg_type }}">
+        <i class="fas fa-{{ 'check-circle' if msg_type == 'success' else 'exclamation-triangle' }}"></i>
+        {{ message }}
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-bus"></i>
+            <h2>Vehicle & Driver Information</h2>
+        </div>
+        <div class="card-body">
+            <form method="POST" id="entryForm">
+
+                <!-- VEHICLE DETAILS -->
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label><i class="fas fa-hashtag"></i> Bus Number <span class="req">*</span></label>
+                        <input type="text" name="bus_number" id="bus_number"
+                               placeholder="e.g. KBZ 123A" required
+                               oninput="this.value = this.value.toUpperCase()">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-bus"></i> Bus Type <span class="req">*</span></label>
+                        <select name="bus_type" id="bus_type" onchange="updateFee()">
+                            <option value="Express">Express — Ksh 50/hr</option>
+                            <option value="Shuttle">Shuttle — Ksh 40/hr</option>
+                            <option value="Standard" selected>Standard — Ksh 30/hr</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-route"></i> Route</label>
+                        <input type="text" name="route" placeholder="e.g. Kisumu - Nairobi">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-building"></i> Owner / Company</label>
+                        <input type="text" name="owner" placeholder="e.g. Easy Coach">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-user"></i> Driver Name</label>
+                        <input type="text" name="driver_name" placeholder="e.g. John Otieno">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-id-badge"></i> Pass Type</label>
+                        <select name="pass_type">
+                            <option value="None">None</option>
+                            <option value="Silver">Silver — 10% off</option>
+                            <option value="Gold">Gold — 20% off</option>
+                            <option value="Platinum">Platinum — 35% off</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- MPESA PAYMENT -->
+                <div class="divider">
+                    <hr><span><i class="fas fa-lock"></i> M-Pesa Payment</span><hr>
+                </div>
+
+                <div class="mpesa-section">
+                    <div class="mpesa-header">
+                        <span class="mpesa-logo">M-PESA</span>
+                        <h3>Lipa Na M-Pesa — Parking Entry Fee</h3>
+                    </div>
+
+                    <div class="fee-display">
+                        <span class="fee-label"><i class="fas fa-parking"></i> Entry Parking Fee</span>
+                        <span class="fee-amount" id="fee-display">Ksh 100</span>
+                    </div>
+
+                    <div class="phone-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-mobile-alt"></i> Driver M-Pesa Phone <span class="req">*</span></label>
+                            <input type="tel" name="driver_phone" id="driver_phone"
+                                   placeholder="e.g. 0712 345 678" required
+                                   oninput="resetPaymentStatus()">
+                        </div>
+                        <button type="button" class="btn-pay" id="payBtn" onclick="triggerSTKPush()">
+                            <i class="fas fa-paper-plane"></i> Send STK Push
+                        </button>
+                    </div>
+
+                    <!-- Payment Status -->
+                    <div id="payment-status">
+                        <div class="status-box status-pending" id="status-pending" style="display:none;">
+                            <div class="spinner"></div>
+                            <span id="status-text">Sending payment request to driver's phone...</span>
+                        </div>
+                        <div class="status-box status-success" id="status-success" style="display:none;">
+                            <i class="fas fa-check-circle" style="font-size:20px;"></i>
+                            <span id="success-text">Payment confirmed! You can now record the entry.</span>
+                        </div>
+                        <div class="status-box status-failed" id="status-failed" style="display:none;">
+                            <i class="fas fa-times-circle" style="font-size:20px;"></i>
+                            <span id="failed-text">Payment failed or cancelled.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- hidden field to carry checkout id -->
+                <input type="hidden" name="checkout_id" id="checkout_id">
+                <input type="hidden" name="amount" id="amount_field" value="100">
+
+                <button type="submit" class="btn-submit" id="submitBtn" disabled>
+                    <i class="fas fa-check-circle"></i> Record Bus Entry
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+    <p>Designed by <strong>Daose David</strong> | &copy; 2026 Kisumu Mpya Bus Park</p>
+    <div class="social" style="margin-top:8px;">
+        <a href="https://wa.me/254123456789" target="_blank"><i class="fab fa-whatsapp"></i></a>
+        <a href="mailto:info@kisumupark.com"><i class="fas fa-envelope"></i></a>
+        <a href="tel:+254123456789"><i class="fas fa-phone"></i></a>
+    </div>
+</footer>
+
+<script>
+    // ── Fee rates matching backend ──
+    const FEE_RATES = { Express: 50, Shuttle: 40, Standard: 30 };
+    const ENTRY_FEE = 100; // flat entry fee in Ksh
+    let checkoutId  = null;
+    let pollTimer   = null;
+    let pollCount   = 0;
+
+    function updateFee() {
+        document.getElementById("fee-display").textContent = `Ksh ${ENTRY_FEE}`;
+        document.getElementById("amount_field").value = ENTRY_FEE;
+    }
+
+    function resetPaymentStatus() {
+        clearInterval(pollTimer);
+        checkoutId = null;
+        pollCount  = 0;
+        document.getElementById("payment-status").style.display = "none";
+        document.getElementById("status-pending").style.display = "none";
+        document.getElementById("status-success").style.display = "none";
+        document.getElementById("status-failed").style.display  = "none";
+        document.getElementById("submitBtn").disabled = true;
+        document.getElementById("payBtn").disabled    = false;
+        document.getElementById("payBtn").innerHTML   = '<i class="fas fa-paper-plane"></i> Send STK Push';
+        // reset steps
+        setStep(1);
+    }
+
+    function setStep(n) {
+        [1,2,3].forEach(i => {
+            const el = document.getElementById(`step${i}`);
+            el.classList.remove("active","done");
+            if (i < n)  el.classList.add("done");
+            if (i === n) el.classList.add("active");
+        });
+    }
+
+    async function triggerSTKPush() {
+        const phone      = document.getElementById("driver_phone").value.trim();
+        const bus_number = document.getElementById("bus_number").value.trim();
+        const amount     = document.getElementById("amount_field").value;
+
+        if (!phone) {
+            alert("Please enter the driver's M-Pesa phone number first.");
+            return;
+        }
+        if (!bus_number) {
+            alert("Please enter the bus number first.");
+            return;
+        }
+
+        // UI: sending
+        document.getElementById("payBtn").disabled  = true;
+        document.getElementById("payBtn").innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+        document.getElementById("payment-status").style.display = "block";
+        document.getElementById("status-pending").style.display = "flex";
+        document.getElementById("status-success").style.display = "none";
+        document.getElementById("status-failed").style.display  = "none";
+        document.getElementById("status-text").textContent = "Sending STK Push to " + phone + "...";
+        setStep(2);
+
+        // Call backend STK push endpoint
+        const formData = new FormData();
+        formData.append("driver_phone", phone);
+        formData.append("amount",       amount);
+        formData.append("bus_number",   bus_number);
+        formData.append("description",  "Parking Fee");
+
+        try {
+            const res  = await fetch("/mpesa/stk_push", { method: "POST", body: formData });
+            const data = await res.json();
+
+            if (data.success) {
+                checkoutId = data.checkout_id;
+                document.getElementById("checkout_id").value = checkoutId;
+                document.getElementById("status-text").textContent =
+                    "✅ Request sent! Ask driver to enter M-Pesa PIN on their phone...";
+                startPolling();
+            } else {
+                showFailed(data.message || "STK Push failed. Try again.");
+            }
+        } catch (err) {
+            showFailed("Network error: " + err.message);
+        }
+    }
+
+    function startPolling() {
+        pollCount = 0;
+        pollTimer = setInterval(pollPayment, 4000); // poll every 4 seconds
+    }
+
+    async function pollPayment() {
+        pollCount++;
+        if (pollCount > 15) {  // stop after ~60 seconds
+            clearInterval(pollTimer);
+            showFailed("Payment timed out. Please try again.");
+            return;
+        }
+
+        document.getElementById("status-text").textContent =
+            `Waiting for payment confirmation... (${pollCount * 4}s)`;
+
+        const formData = new FormData();
+        formData.append("checkout_id", checkoutId);
+
+        try {
+            const res  = await fetch("/mpesa/query", { method: "POST", body: formData });
+            const data = await res.json();
+
+            if (data.paid) {
+                clearInterval(pollTimer);
+                showSuccess("✅ Payment confirmed! Click 'Record Bus Entry' to complete.");
+            } else if (data.success && !data.paid && data.message.includes("cancel")) {
+                clearInterval(pollTimer);
+                showFailed("Payment was cancelled by the driver.");
+            }
+            // else still pending — keep polling
+        } catch (err) {
+            // network hiccup — keep polling
+        }
+    }
+
+    function showSuccess(msg) {
+        document.getElementById("status-pending").style.display = "none";
+        document.getElementById("status-success").style.display = "flex";
+        document.getElementById("status-failed").style.display  = "none";
+        document.getElementById("success-text").textContent     = msg;
+        document.getElementById("submitBtn").disabled = false;
+        document.getElementById("payBtn").innerHTML   = '<i class="fas fa-check"></i> Paid';
+        setStep(3);
+    }
+
+    function showFailed(msg) {
+        document.getElementById("status-pending").style.display = "none";
+        document.getElementById("status-success").style.display = "none";
+        document.getElementById("status-failed").style.display  = "flex";
+        document.getElementById("failed-text").textContent      = msg;
+        document.getElementById("payBtn").disabled  = false;
+        document.getElementById("payBtn").innerHTML = '<i class="fas fa-redo"></i> Retry';
+        setStep(2);
+    }
+
+    // Initialize
+    updateFee();
+</script>
 </body>
 </html>

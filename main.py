@@ -12,6 +12,7 @@ import transactions as txns
 import drivers as drv
 import users as usr
 import reports as rpts
+import mpesa
 
 app = Flask(__name__)
 app.secret_key = "kisumu_bus_park_secret"
@@ -353,6 +354,64 @@ def export_csv():
         mimetype="text/csv",
         headers={"Content-Disposition": "attachment; filename=transactions.csv"}
     )
+
+
+# ---------------------------
+# M-Pesa STK Push
+# ---------------------------
+@app.route("/mpesa/stk_push", methods=["POST"])
+@login_required
+def mpesa_stk_push():
+    """Trigger STK push to driver phone after bus entry form is submitted."""
+    phone       = request.form.get("driver_phone", "").strip()
+    amount      = request.form.get("amount", 100)
+    account_ref = request.form.get("bus_number", "BUSPARK")
+    description = request.form.get("description", "Parking Fee")
+
+    if not phone:
+        return jsonify({"success": False, "message": "Phone number is required."})
+
+    result = mpesa.stk_push(
+        phone       = phone,
+        amount      = amount,
+        account_ref = account_ref,
+        description = description,
+    )
+    return jsonify(result)
+
+
+@app.route("/mpesa/query", methods=["POST"])
+@login_required
+def mpesa_query():
+    """Poll payment status for a given CheckoutRequestID."""
+    checkout_id = request.form.get("checkout_id", "")
+    if not checkout_id:
+        return jsonify({"success": False, "message": "Missing checkout ID."})
+    result = mpesa.query_stk(checkout_id)
+    return jsonify(result)
+
+
+@app.route("/mpesa/callback", methods=["POST"])
+def mpesa_callback():
+    """Daraja callback — receives payment confirmation from Safaricom."""
+    data = request.get_json(silent=True) or {}
+    print(f"[MPESA CALLBACK] {data}")
+    # Extract result
+    try:
+        body        = data["Body"]["stkCallback"]
+        result_code = body["ResultCode"]
+        checkout_id = body["CheckoutRequestID"]
+        if result_code == 0:
+            items = {i["Name"]: i.get("Value") for i in body["CallbackMetadata"]["Item"]}
+            amount  = items.get("Amount")
+            receipt = items.get("MpesaReceiptNumber")
+            phone   = items.get("PhoneNumber")
+            print(f"[MPESA] PAID ✅ Receipt:{receipt} Amount:{amount} Phone:{phone} Checkout:{checkout_id}")
+        else:
+            print(f"[MPESA] FAILED ❌ Code:{result_code} Checkout:{checkout_id}")
+    except Exception as e:
+        print(f"[MPESA CALLBACK ERROR] {e}")
+    return jsonify({"ResultCode": 0, "ResultDesc": "Accepted"})
 
 
 # ---------------------------
