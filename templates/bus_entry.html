@@ -94,15 +94,21 @@
             border: 1.5px solid #a5d6a7;
             border-radius: 12px; padding: 20px;
         }
-        .mpesa-header {
-            display: flex; align-items: center; gap: 10px;
-            margin-bottom: 14px;
+        .mpesa-section.simulated {
+            background: linear-gradient(135deg, #fff8e1, #fffde7);
+            border: 1.5px solid #ffe082;
         }
         .mpesa-logo {
             background: #4caf50; color: white;
             font-weight: 900; font-size: 13px;
             padding: 5px 10px; border-radius: 6px;
             letter-spacing: 1px;
+        }
+        .sim-badge {
+            display: inline-block; background: #ff9800; color: white;
+            font-size: 11px; font-weight: 700; padding: 3px 10px;
+            border-radius: 20px; letter-spacing: 1px;
+            text-transform: uppercase; margin-left: 8px;
         }
         .mpesa-header h3 { font-size: 15px; color: #2e7d32; }
 
@@ -293,10 +299,10 @@
                     <hr><span><i class="fas fa-lock"></i> M-Pesa Payment</span><hr>
                 </div>
 
-                <div class="mpesa-section">
+                <div class="mpesa-section" id="mpesa-section">
                     <div class="mpesa-header">
                         <span class="mpesa-logo">M-PESA</span>
-                        <h3>Lipa Na M-Pesa — Parking Entry Fee</h3>
+                        <h3 id="mpesa-title">Lipa Na M-Pesa — Parking Entry Fee</h3>
                     </div>
 
                     <div class="fee-display">
@@ -356,12 +362,12 @@
 </footer>
 
 <script>
-    // ── Fee rates matching backend ──
     const FEE_RATES = { Express: 50, Shuttle: 40, Standard: 30 };
-    const ENTRY_FEE = 100; // flat entry fee in Ksh
+    const ENTRY_FEE = 100;
     let checkoutId  = null;
     let pollTimer   = null;
     let pollCount   = 0;
+    let isSimulated = false;
 
     function updateFee() {
         document.getElementById("fee-display").textContent = `Ksh ${ENTRY_FEE}`;
@@ -370,8 +376,9 @@
 
     function resetPaymentStatus() {
         clearInterval(pollTimer);
-        checkoutId = null;
-        pollCount  = 0;
+        checkoutId  = null;
+        pollCount   = 0;
+        isSimulated = false;
         document.getElementById("payment-status").style.display = "none";
         document.getElementById("status-pending").style.display = "none";
         document.getElementById("status-success").style.display = "none";
@@ -379,7 +386,7 @@
         document.getElementById("submitBtn").disabled = true;
         document.getElementById("payBtn").disabled    = false;
         document.getElementById("payBtn").innerHTML   = '<i class="fas fa-paper-plane"></i> Send STK Push';
-        // reset steps
+        document.getElementById("mpesa-section").classList.remove("simulated");
         setStep(1);
     }
 
@@ -397,16 +404,9 @@
         const bus_number = document.getElementById("bus_number").value.trim();
         const amount     = document.getElementById("amount_field").value;
 
-        if (!phone) {
-            alert("Please enter the driver's M-Pesa phone number first.");
-            return;
-        }
-        if (!bus_number) {
-            alert("Please enter the bus number first.");
-            return;
-        }
+        if (!phone)      { alert("Please enter the driver's M-Pesa phone number first."); return; }
+        if (!bus_number) { alert("Please enter the bus number first."); return; }
 
-        // UI: sending
         document.getElementById("payBtn").disabled  = true;
         document.getElementById("payBtn").innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
         document.getElementById("payment-status").style.display = "block";
@@ -416,7 +416,6 @@
         document.getElementById("status-text").textContent = "Sending STK Push to " + phone + "...";
         setStep(2);
 
-        // Call backend STK push endpoint
         const formData = new FormData();
         formData.append("driver_phone", phone);
         formData.append("amount",       amount);
@@ -428,11 +427,30 @@
             const data = await res.json();
 
             if (data.success) {
-                checkoutId = data.checkout_id;
+                checkoutId  = data.checkout_id;
+                isSimulated = data.sandbox_mode || data.simulated || false;
                 document.getElementById("checkout_id").value = checkoutId;
-                document.getElementById("status-text").textContent =
-                    "✅ Request sent! Ask driver to enter M-Pesa PIN on their phone...";
-                startPolling();
+
+                if (isSimulated) {
+                    document.getElementById("mpesa-section").classList.add("simulated");
+                    // Add simulation badge to header
+                    const hdr = document.getElementById("mpesa-title");
+                    if (hdr && !document.getElementById("sim-badge")) {
+                        const badge = document.createElement("span");
+                        badge.id        = "sim-badge";
+                        badge.className = "sim-badge";
+                        badge.textContent = "🧪 Simulation";
+                        hdr.appendChild(badge);
+                    }
+                    document.getElementById("status-text").textContent =
+                        "🧪 Simulation mode — auto-confirming payment...";
+                    // In simulation, confirm immediately after 2 seconds
+                    setTimeout(() => pollPayment(), 2000);
+                } else {
+                    document.getElementById("status-text").textContent =
+                        "✅ Request sent! Ask driver to enter M-Pesa PIN on their phone...";
+                    startPolling();
+                }
             } else {
                 showFailed(data.message || "STK Push failed. Try again.");
             }
@@ -443,19 +461,21 @@
 
     function startPolling() {
         pollCount = 0;
-        pollTimer = setInterval(pollPayment, 4000); // poll every 4 seconds
+        pollTimer = setInterval(pollPayment, 4000);
     }
 
     async function pollPayment() {
         pollCount++;
-        if (pollCount > 15) {  // stop after ~60 seconds
+        if (!isSimulated && pollCount > 15) {
             clearInterval(pollTimer);
             showFailed("Payment timed out. Please try again.");
             return;
         }
 
-        document.getElementById("status-text").textContent =
-            `Waiting for payment confirmation... (${pollCount * 4}s)`;
+        if (!isSimulated) {
+            document.getElementById("status-text").textContent =
+                `Waiting for payment confirmation... (${pollCount * 4}s)`;
+        }
 
         const formData = new FormData();
         formData.append("checkout_id", checkoutId);
@@ -466,12 +486,14 @@
 
             if (data.paid) {
                 clearInterval(pollTimer);
-                showSuccess("✅ Payment confirmed! Click 'Record Bus Entry' to complete.");
-            } else if (data.success && !data.paid && data.message.includes("cancel")) {
+                const msg = isSimulated
+                    ? "🧪 Simulation: Payment auto-confirmed! Click 'Record Bus Entry'."
+                    : "✅ Payment confirmed! Click 'Record Bus Entry' to complete.";
+                showSuccess(msg);
+            } else if (data.success && !data.paid && data.message && data.message.includes("cancel")) {
                 clearInterval(pollTimer);
                 showFailed("Payment was cancelled by the driver.");
             }
-            // else still pending — keep polling
         } catch (err) {
             // network hiccup — keep polling
         }
@@ -497,7 +519,6 @@
         setStep(2);
     }
 
-    // Initialize
     updateFee();
 </script>
 </body>

@@ -362,7 +362,6 @@ def export_csv():
 @app.route("/mpesa/stk_push", methods=["POST"])
 @login_required
 def mpesa_stk_push():
-    """Trigger STK push to driver phone after bus entry form is submitted."""
     phone       = request.form.get("driver_phone", "").strip()
     amount      = request.form.get("amount", 100)
     account_ref = request.form.get("bus_number", "BUSPARK")
@@ -377,6 +376,8 @@ def mpesa_stk_push():
         account_ref = account_ref,
         description = description,
     )
+    # include sandbox mode flag in response so UI can show badge
+    result["sandbox_mode"] = mpesa.SANDBOX_MODE
     return jsonify(result)
 
 
