@@ -4,17 +4,130 @@
     <meta charset="UTF-8">
     <title>Login - Kisumu Mpya Bus Park</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; }
-        header { background: #1a73e8; color: white; padding: 20px; text-align: center; }
-        .login-wrapper { display: flex; justify-content: center; align-items: center; min-height: 80vh; }
-        .login-box { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.12); width: 100%; max-width: 400px; }
-        .login-box h2 { text-align: center; color: #1a73e8; margin-bottom: 25px; }
-        label { font-weight: bold; display: block; margin-top: 12px; font-size: 14px; }
-        input { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; box-sizing: border-box; }
-        button { margin-top: 22px; width: 100%; padding: 12px; background: #1a73e8; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold; }
-        button:hover { background: #1558b0; }
-        .error { background: #f8d7da; color: #721c24; padding: 10px; border-radius: 6px; margin-bottom: 10px; text-align: center; }
-        footer { background: #333; color: white; text-align: center; padding: 15px; position: fixed; width: 100%; bottom: 0; }
+        :root {
+            --brand: #1a73e8;
+            --brand-dark: #1558b0;
+            --card-bg: rgba(255, 255, 255, 0.92);
+            --text: #1f2937;
+            --muted: #4b5563;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            color: var(--text);
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.76), rgba(15, 23, 42, 0.76)),
+                        url('https://images.unsplash.com/photo-1563720229185-486b8ae0b2aa?auto=format&fit=crop&w=2100&q=80') center/cover fixed no-repeat;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            backdrop-filter: blur(12px);
+        }
+
+        .login-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: calc(100vh - 120px);
+            padding: 24px;
+        }
+
+        .login-box {
+            background: var(--card-bg);
+            padding: 36px 32px;
+            border-radius: 16px;
+            box-shadow: 0 18px 45px rgba(0, 0, 0, 0.22);
+            width: 100%;
+            max-width: 420px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        .login-box h2 {
+            text-align: center;
+            color: var(--brand);
+            margin-bottom: 20px;
+            font-size: 1.6rem;
+        }
+
+        label {
+            font-weight: 600;
+            display: block;
+            margin-top: 16px;
+            font-size: 0.9rem;
+            color: var(--muted);
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 14px;
+            margin-top: 6px;
+            border: 1px solid rgba(148, 163, 184, 0.55);
+            border-radius: 10px;
+            font-size: 0.95rem;
+            box-sizing: border-box;
+            background: rgba(255, 255, 255, 0.82);
+        }
+
+        input:focus {
+            outline: none;
+            border-color: rgba(26, 115, 232, 0.9);
+            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.2);
+        }
+
+        button {
+            margin-top: 22px;
+            width: 100%;
+            padding: 14px;
+            background: var(--brand);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: 700;
+            transition: transform 0.15s ease, background 0.15s ease;
+        }
+
+        button:hover {
+            background: var(--brand-dark);
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .error {
+            background: rgba(248, 215, 218, 0.95);
+            color: #7f1d1d;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            text-align: center;
+            border: 1px solid rgba(248, 215, 218, 0.85);
+        }
+
+        footer {
+            background: rgba(15, 23, 42, 0.6);
+            color: rgba(255, 255, 255, 0.8);
+            text-align: center;
+            padding: 14px;
+            position: fixed;
+            width: 100%;
+            bottom: 0;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+        }
+
+        @media (max-width: 480px) {
+            .login-box { padding: 28px 20px; }
+            .login-box h2 { font-size: 1.4rem; }
+        }
     </style>
 </head>
 <body>

@@ -5,8 +5,13 @@
     <title>Drivers & Conductors - Kisumu Mpya Bus Park</title>
     <style>
         body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; }
-        header { background: #1a73e8; color: white; padding: 20px; text-align: center; }
-        nav a { margin: 0 15px; color: white; text-decoration: none; font-weight: bold; }
+        header { background: linear-gradient(135deg, #1a73e8, #34a853); color: white; padding: 14px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .brand { display: flex; align-items: center; gap: 14px; }
+        .brand img { height: 72px; width: 72px; border-radius: 50%; background: white; padding: 3px; object-fit: cover; flex-shrink: 0; box-shadow: 0 0 0 3px rgba(255,255,255,0.5), 0 0 16px rgba(255,255,255,0.3); transition: transform 0.3s; }
+        .brand img:hover { transform: scale(1.08); }
+        .brand h1 { font-size: 20px; font-weight: 900; margin: 0; letter-spacing: 0.5px; text-shadow: 1px 1px 4px rgba(0,0,0,0.3); }
+        .brand span { font-size: 11px; color: rgba(255,255,255,0.8); display: block; letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; }
+        nav a { margin: 0 12px; color: white; text-decoration: none; font-weight: bold; font-size: 13px; }
         nav a:hover { color: #ffd700; }
         .container { max-width: 850px; margin: 40px auto 80px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         h2 { color: #1a73e8; }
@@ -35,7 +40,13 @@
 </head>
 <body>
     <header>
-        <h1>Kisumu Mpya Bus Park</h1>
+        <div class="brand">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Kisumu Mpya Bus Park Logo">
+            <div>
+                <h1>Kisumu Mpya Bus Park</h1>
+                <span>Kisumu City &bull; Est. 2026</span>
+            </div>
+        </div>
         <nav>
             <a href="/">Home</a>
             <a href="/bus_entry">Bus Entry</a>

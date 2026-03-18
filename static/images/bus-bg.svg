@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="800" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#0d1b33" />
+    </linearGradient>
+    <linearGradient id="lightGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="800" fill="url(#bgGrad)" />
+  <rect x="0" y="0" width="1200" height="800" fill="url(#lightGrad)" />
+
+  <!-- subtle pattern -->
+  <g opacity="0.12">
+    <path d="M0 200 L1200 0" stroke="#ffffff" stroke-width="2" />
+    <path d="M0 400 L1200 200" stroke="#ffffff" stroke-width="2" />
+    <path d="M0 600 L1200 400" stroke="#ffffff" stroke-width="2" />
+  </g>
+
+  <!-- bus silhouette -->
+  <g transform="translate(320 320) scale(1.2)">
+    <rect x="0" y="0" width="560" height="180" rx="30" fill="#ffffff" fill-opacity="0.16" />
+    <rect x="30" y="20" width="500" height="120" rx="16" fill="#ffffff" fill-opacity="0.12" />
+    <path d="M40 20 H520 L520 70 H40 Z" fill="#ffffff" fill-opacity="0.18" />
+    <path d="M40 110 H520 V140 H40 Z" fill="#ffffff" fill-opacity="0.12" />
+
+    <circle cx="120" cy="180" r="30" fill="#ffffff" fill-opacity="0.25" />
+    <circle cx="440" cy="180" r="30" fill="#ffffff" fill-opacity="0.25" />
+
+    <path d="M110 170 L130 170 L130 190 L110 190 Z" fill="#0f172a" />
+    <path d="M430 170 L450 170 L450 190 L430 190 Z" fill="#0f172a" />
+
+    <rect x="80" y="50" width="30" height="55" rx="6" fill="#0f172a" />
+    <rect x="130" y="50" width="30" height="55" rx="6" fill="#0f172a" />
+    <rect x="180" y="50" width="30" height="55" rx="6" fill="#0f172a" />
+    <rect x="230" y="50" width="30" height="55" rx="6" fill="#0f172a" />
+    <rect x="280" y="50" width="30" height="55" rx="6" fill="#0f172a" />
+    <rect x="330" y="50" width="30" height="55" rx="6" fill="#0f172a" />
+    <rect x="380" y="50" width="30" height="55" rx="6" fill="#0f172a" />
+
+    <path d="M0 180 L560 180 L560 210 L0 210 Z" fill="#ffffff" fill-opacity="0.1" />
+  </g>
+</svg>

@@ -17,9 +17,25 @@
             position: sticky; top: 0; z-index: 100;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
-        .brand { display: flex; align-items: center; gap: 12px; }
-        .brand img { height: 42px; border-radius: 8px; }
-        .brand h1 { font-family: 'Montserrat', sans-serif; font-size: 20px; }
+        .brand { display: flex; align-items: center; gap: 14px; }
+        .brand img {
+            height: 96px;
+            width: 96px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.6));
+            padding: 4px;
+            border: 2px solid rgba(255,255,255,0.75);
+            object-fit: cover;
+            flex-shrink: 0;
+            box-shadow: 0 10px 18px rgba(0,0,0,0.25);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .brand img:hover {
+            transform: scale(1.1);
+            box-shadow: 0 14px 24px rgba(0,0,0,0.28);
+        }
+        .brand h1 { font-family: 'Montserrat', sans-serif; font-size: 22px; font-weight: 900; margin: 0; letter-spacing: 0.5px; text-shadow: 1px 1px 4px rgba(0,0,0,0.3); }
+        .brand span { font-size: 11px; color: rgba(255,255,255,0.8); display: block; letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; }
         nav a {
             margin-left: 18px; color: white; text-decoration: none;
             font-weight: 600; font-size: 13px; transition: 0.3s;
@@ -212,8 +228,11 @@
 <!-- HEADER -->
 <header>
     <div class="brand">
-        <img src="/static/images/logo.png" alt="Logo">
-        <h1>Kisumu Mpya Bus Park</h1>
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Kisumu Mpya Bus Park Logo">
+        <div>
+            <h1>Kisumu Mpya Bus Park</h1>
+            <span>Kisumu City &bull; Est. 2026</span>
+        </div>
     </div>
     <nav>
         <a href="/"><i class="fas fa-home"></i> Home</a>
@@ -364,10 +383,11 @@
 <script>
     const FEE_RATES = { Express: 50, Shuttle: 40, Standard: 30 };
     const ENTRY_FEE = 100;
-    let checkoutId  = null;
-    let pollTimer   = null;
-    let pollCount   = 0;
-    let isSimulated = false;
+    let checkoutId   = null;
+    let pollTimer    = null;
+    let pollCount    = 0;
+    let isSandbox    = false;
+    let isSimulated  = false;
 
     function updateFee() {
         document.getElementById("fee-display").textContent = `Ksh ${ENTRY_FEE}`;
@@ -378,6 +398,7 @@
         clearInterval(pollTimer);
         checkoutId  = null;
         pollCount   = 0;
+        isSandbox   = false;
         isSimulated = false;
         document.getElementById("payment-status").style.display = "none";
         document.getElementById("status-pending").style.display = "none";
@@ -387,6 +408,12 @@
         document.getElementById("payBtn").disabled    = false;
         document.getElementById("payBtn").innerHTML   = '<i class="fas fa-paper-plane"></i> Send STK Push';
         document.getElementById("mpesa-section").classList.remove("simulated");
+
+        const simBadge = document.getElementById("sim-badge");
+        if (simBadge) simBadge.remove();
+        const sandboxBadge = document.getElementById("sandbox-badge");
+        if (sandboxBadge) sandboxBadge.remove();
+
         setStep(1);
     }
 
@@ -427,28 +454,39 @@
             const data = await res.json();
 
             if (data.success) {
-                checkoutId  = data.checkout_id;
-                isSimulated = data.sandbox_mode || data.simulated || false;
+                checkoutId   = data.checkout_id;
+                isSandbox    = data.sandbox_mode || false;
+                isSimulated  = data.simulated || false;
                 document.getElementById("checkout_id").value = checkoutId;
 
-                if (isSimulated) {
-                    document.getElementById("mpesa-section").classList.add("simulated");
-                    // Add simulation badge to header
-                    const hdr = document.getElementById("mpesa-title");
-                    if (hdr && !document.getElementById("sim-badge")) {
+                // Show badge(s)
+                const hdr = document.getElementById("mpesa-title");
+                if (hdr) {
+                    if (isSandbox && !document.getElementById("sandbox-badge")) {
+                        const badge = document.createElement("span");
+                        badge.id        = "sandbox-badge";
+                        badge.className = "sim-badge";
+                        badge.textContent = "🧪 Sandbox";
+                        hdr.appendChild(badge);
+                    }
+                    if (isSimulated && !document.getElementById("sim-badge")) {
                         const badge = document.createElement("span");
                         badge.id        = "sim-badge";
                         badge.className = "sim-badge";
                         badge.textContent = "🧪 Simulation";
                         hdr.appendChild(badge);
                     }
+                }
+
+                if (isSimulated) {
+                    document.getElementById("mpesa-section").classList.add("simulated");
                     document.getElementById("status-text").textContent =
                         "🧪 Simulation mode — auto-confirming payment...";
                     // In simulation, confirm immediately after 2 seconds
                     setTimeout(() => pollPayment(), 2000);
                 } else {
                     document.getElementById("status-text").textContent =
-                        "✅ Request sent! Ask driver to enter M-Pesa PIN on their phone...";
+                        "📲 STK Push sent! Driver should see M-Pesa PIN prompt on " + phone + ". Waiting for confirmation...";
                     startPolling();
                 }
             } else {

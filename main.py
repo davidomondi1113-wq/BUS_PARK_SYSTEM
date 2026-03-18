@@ -97,6 +97,15 @@ def login_required(f):
 
 
 # ---------------------------
+# Static logo route (SVG)
+# ---------------------------
+@app.route("/static/images/logo.svg")
+def logo_svg():
+    from flask import send_from_directory
+    return send_from_directory("static/images", "logo.svg", mimetype="image/svg+xml")
+
+
+# ---------------------------
 # Login / Logout
 # ---------------------------
 @app.route("/login", methods=["GET", "POST"])
@@ -360,8 +369,10 @@ def export_csv():
 # M-Pesa STK Push
 # ---------------------------
 @app.route("/mpesa/stk_push", methods=["POST"])
-@login_required
 def mpesa_stk_push():
+    if not session.get("user"):
+        return jsonify({"success": False, "message": "Session expired. Please refresh and log in again."}), 401
+
     phone       = request.form.get("driver_phone", "").strip()
     amount      = request.form.get("amount", 100)
     account_ref = request.form.get("bus_number", "BUSPARK")
@@ -376,15 +387,15 @@ def mpesa_stk_push():
         account_ref = account_ref,
         description = description,
     )
-    # include sandbox mode flag in response so UI can show badge
-    result["sandbox_mode"] = mpesa.SANDBOX_MODE
+    result["sandbox_mode"] = mpesa.SIMULATION_MODE
     return jsonify(result)
 
 
 @app.route("/mpesa/query", methods=["POST"])
-@login_required
 def mpesa_query():
-    """Poll payment status for a given CheckoutRequestID."""
+    if not session.get("user"):
+        return jsonify({"success": False, "paid": False, "message": "Session expired."}), 401
+
     checkout_id = request.form.get("checkout_id", "")
     if not checkout_id:
         return jsonify({"success": False, "message": "Missing checkout ID."})

@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" width="220" height="220">
+  <!-- Outer circle background -->
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a73e8"/>
+      <stop offset="100%" style="stop-color:#34a853"/>
+    </linearGradient>
+    <linearGradient id="busGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff"/>
+      <stop offset="100%" style="stop-color:#e8f0fe"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Circle background -->
+  <circle cx="110" cy="110" r="105" fill="url(#bgGrad)"/>
+  <circle cx="110" cy="110" r="100" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+
+  <!-- Road / ground line -->
+  <rect x="30" y="155" width="160" height="6" rx="3" fill="rgba(255,255,255,0.25)"/>
+
+  <!-- Bus body -->
+  <rect x="42" y="100" width="136" height="52" rx="8" fill="url(#busGrad)" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
+
+  <!-- Bus roof -->
+  <rect x="52" y="88" width="116" height="16" rx="6" fill="white" opacity="0.95"/>
+
+  <!-- Bus windows -->
+  <rect x="58"  y="93" width="20" height="10" rx="3" fill="#1a73e8" opacity="0.7"/>
+  <rect x="84"  y="93" width="20" height="10" rx="3" fill="#1a73e8" opacity="0.7"/>
+  <rect x="110" y="93" width="20" height="10" rx="3" fill="#1a73e8" opacity="0.7"/>
+  <rect x="136" y="93" width="20" height="10" rx="3" fill="#1a73e8" opacity="0.7"/>
+
+  <!-- Bus side windows -->
+  <rect x="52"  y="108" width="22" height="16" rx="3" fill="#1a73e8" opacity="0.5"/>
+  <rect x="80"  y="108" width="22" height="16" rx="3" fill="#1a73e8" opacity="0.5"/>
+  <rect x="108" y="108" width="22" height="16" rx="3" fill="#1a73e8" opacity="0.5"/>
+  <rect x="136" y="108" width="22" height="16" rx="3" fill="#1a73e8" opacity="0.5"/>
+
+  <!-- Bus door -->
+  <rect x="158" y="108" width="14" height="22" rx="2" fill="#34a853" opacity="0.8"/>
+
+  <!-- Bus front grill -->
+  <rect x="42" y="118" width="8" height="20" rx="2" fill="#fbbc05" opacity="0.9"/>
+
+  <!-- Headlight -->
+  <rect x="44" y="120" width="5" height="6" rx="1" fill="#fff9c4"/>
+
+  <!-- Wheels -->
+  <circle cx="72"  cy="155" r="12" fill="#333" stroke="white" stroke-width="2"/>
+  <circle cx="72"  cy="155" r="5"  fill="#888"/>
+  <circle cx="148" cy="155" r="12" fill="#333" stroke="white" stroke-width="2"/>
+  <circle cx="148" cy="155" r="5"  fill="#888"/>
+
+  <!-- M-Pesa green stripe on bus -->
+  <rect x="42" y="130" width="136" height="5" rx="0" fill="#34a853" opacity="0.6"/>
+
+  <!-- Text: KISUMU MPYA -->
+  <text x="110" y="185" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="13" font-weight="900" fill="white" letter-spacing="1">KISUMU MPYA</text>
+
+  <!-- Text: BUS PARK -->
+  <text x="110" y="200" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="700" fill="rgba(255,255,255,0.85)" letter-spacing="2">BUS PARK</text>
+
+  <!-- Star accents -->
+  <text x="38"  y="188" font-size="8" fill="#fbbc05">★</text>
+  <text x="174" y="188" font-size="8" fill="#fbbc05">★</text>
+</svg>
