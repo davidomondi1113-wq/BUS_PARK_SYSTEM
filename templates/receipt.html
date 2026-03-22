@@ -26,7 +26,7 @@
         button { margin-top: 20px; width: 100%; padding: 12px; background: #1a73e8; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; }
         button:hover { background: #1558b0; }
         .back { display: inline-block; margin-top: 15px; color: #1a73e8; text-decoration: none; }
-        footer { background: #333; color: white; text-align: center; padding: 15px; position: fixed; width: 100%; bottom: 0; }
+        footer { background: #333; color: white; text-align: center; padding: 10px; margin-top: 40px; }
         .error { padding: 15px; border-radius: 8px; background: #f8d7da; color: #721c24; margin-bottom: 15px; }
     </style>
 </head>
@@ -72,12 +72,18 @@
 
                 <div class="receipt-footer">
                     <p><span class="label">Amount Paid:</span> Ksh {{ txn.amount_paid }}</p>
+                    <p><span class="label">Duration:</span> {{ txn.duration_minutes }} minutes</p>
+                    <p><span class="label">Pass:</span> {{ txn.pass_used or 'None' }}</p>
+                    <p><span class="label">Recorded By:</span> {{ txn.recorded_by }}</p>
+                    <p><span class="label">Expiration:</span> {{ expiry_time or 'N/A' }}</p>
                     <p class="note">Keep this receipt for exit verification.</p>
                 </div>
             </div>
 
             <button onclick="window.print()">Print Receipt</button>
-            <a href="/bus_entry" class="back">← New Entry</a>
+            <a href="{{ url_for('receipt_pdf', receipt_number=txn.receipt_number) }}" class="back" style="margin-left: 0;">↓ Download PDF</a>
+            <a href="#" id="downloadJson" class="back" style="margin-left: 18px;">↓ Download JSON</a>
+            <a href="/bus_entry" class="back" style="margin-left: 18px;">← New Entry</a>
             <a href="/bus_exit" class="back" style="margin-left: 18px;">→ Exit Bus</a>
         {% endif %}
     </div>
@@ -95,6 +101,36 @@
                 size: 120,
                 level: 'H'
             });
+
+            const downloadLink = document.getElementById('downloadJson');
+            if (downloadLink) {
+                downloadLink.addEventListener('click', function (evt) {
+                    evt.preventDefault();
+                    const receiptData = {
+                        receipt_number: '{{ txn.receipt_number }}',
+                        url: window.location.href,
+                        date: '{{ txn.date }} {{ txn.exit_time }}',
+                        bus_number: '{{ txn.bus_number }}',
+                        bus_type: '{{ txn.bus_type }}',
+                        driver_phone: '{{ txn.driver_phone }}',
+                        slot: '{{ bus.slot_number if bus else "N/A" }}',
+                        route: '{{ bus.route if bus else "N/A" }}',
+                        amount_paid: {{ txn.amount_paid }},
+                        duration_minutes: {{ txn.duration_minutes }},
+                        pass_used: '{{ txn.pass_used }}',
+                        expiry: '{{ expiry_time }}',
+                    };
+                    const blob = new Blob([JSON.stringify(receiptData, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = '{{ txn.receipt_number }}.json';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                });
+            }
         });
     </script>
 </body>

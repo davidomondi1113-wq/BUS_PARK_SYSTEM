@@ -15,21 +15,47 @@ import base64
 import uuid
 import requests
 from datetime import datetime
+from database import db
+from models import Setting
+
+# ── DB HELPER ────────────────────────────────────────────────────────────────
+def get_mpesa_setting(key, default=""):
+    """Get M-Pesa setting from DB, env var, or default. Safe without app context."""
+    try:
+        setting = Setting.query.get(key)
+        if setting and setting.value is not None:
+            return setting.value
+    except Exception:
+        # Possibly no app context / DB not ready
+        pass
+
+    # Translate mpesa_foo to MPESA_FOO env var
+    env_key = key.upper()
+    if env_key.startswith("MPESA_") is False:
+        env_key = f"MPESA_{env_key}"
+    return os.environ.get(env_key, default)
+
 
 # ── MODE ──────────────────────────────────────────────────────────────────────
-SIMULATION_MODE = False   # True = local auto-confirm | False = real Daraja API
+SIMULATION_MODE = get_mpesa_setting("mpesa_simulation_mode", "true").lower() == "true"   # True = local auto-confirm | False = real Daraja API
 
-# ── CREDENTIALS (read from env vars, fallback to placeholders) ────────────────
-CONSUMER_KEY    = os.environ.get("MPESA_CONSUMER_KEY",    "")
-CONSUMER_SECRET = os.environ.get("MPESA_CONSUMER_SECRET", "")
-SHORTCODE       = os.environ.get("MPESA_SHORTCODE",       "174379")
-PASSKEY         = os.environ.get("MPESA_PASSKEY",         "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919")
-CALLBACK_URL    = os.environ.get("MPESA_CALLBACK_URL",    "")
+# ── CREDENTIALS (read from DB settings, fallback to defaults) ────────────────
+CONSUMER_KEY    = get_mpesa_setting("mpesa_consumer_key",    "")
+CONSUMER_SECRET = get_mpesa_setting("mpesa_consumer_secret", "")
+SHORTCODE       = get_mpesa_setting("mpesa_shortcode",       "174379")
+PASSKEY         = get_mpesa_setting("mpesa_passkey",         "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919")
+CALLBACK_URL    = get_mpesa_setting("mpesa_callback_url",    "")
 
 # ── DARAJA ENDPOINTS (sandbox) ────────────────────────────────────────────────
 TOKEN_URL = "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
 STK_URL   = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
 QUERY_URL = "https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query"
+
+# ── DB HELPER ────────────────────────────────────────────────────────────────
+def get_mpesa_setting(key, default=""):
+    """Get M-Pesa setting from DB or return default."""
+    setting = Setting.query.get(key)
+    return setting.value if setting else default
 
 # ── In-memory simulation store ────────────────────────────────────────────────
 _sim_payments = {}
@@ -56,11 +82,10 @@ def _sim_query(checkout_id):
 # ── VALIDATION ────────────────────────────────────────────────────────────────
 def _validate():
     """Return (ok, error_message). Called before every real STK Push."""
+    CALLBACK_URL = get_mpesa_setting("mpesa_callback_url")
     if not CALLBACK_URL:
         return False, (
-            "CALLBACK_URL is not set. "
-            "Run: set MPESA_CALLBACK_URL=https://xxxx.ngrok-free.app/mpesa/callback "
-            "then restart the server."
+            "mpesa_callback_url not set. Go to /settings to configure."
         )
     if CALLBACK_URL.startswith("https://your") or "placeholder" in CALLBACK_URL:
         return False, (
@@ -76,10 +101,10 @@ def _validate():
 
 # ── DARAJA HELPERS ────────────────────────────────────────────────────────────
 def _get_access_token():
-    key    = os.environ.get("MPESA_CONSUMER_KEY")    or CONSUMER_KEY
-    secret = os.environ.get("MPESA_CONSUMER_SECRET") or CONSUMER_SECRET
+    key    = get_mpesa_setting("mpesa_consumer_key")
+    secret = get_mpesa_setting("mpesa_consumer_secret")
     if not key or not secret:
-        print("[MPESA] Missing MPESA_CONSUMER_KEY/MPESA_CONSUMER_SECRET environment variables.")
+        print("[MPESA] Missing mpesa_consumer_key/mpesa_consumer_secret in settings. Go to /settings.")
         return None
 
     creds = base64.b64encode(f"{key}:{secret}".encode()).decode()
@@ -97,7 +122,9 @@ def _get_access_token():
 
 def _generate_password():
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    raw = f"{SHORTCODE}{PASSKEY}{timestamp}"
+    shortcode = get_mpesa_setting("mpesa_shortcode", "174379")
+    passkey   = get_mpesa_setting("mpesa_passkey", "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919")
+    raw = f"{shortcode}{passkey}{timestamp}"
     return base64.b64encode(raw.encode()).decode(), timestamp
 
 def format_phone(phone):
@@ -115,6 +142,7 @@ def stk_push(phone, amount, account_ref, description="Parking Fee"):
     if SIMULATION_MODE:
         return _sim_stk_push(phone, amount, account_ref, description)
 
+    CALLBACK_URL = get_mpesa_setting("mpesa_callback_url")
     ok, msg = _validate()
     if not ok:
         return {"success": False, "message": msg}
@@ -123,9 +151,9 @@ def stk_push(phone, amount, account_ref, description="Parking Fee"):
     if not token:
         return {"success": False, "message": "Failed to get M-Pesa access token. Check credentials."}
 
-    shortcode = os.environ.get("MPESA_SHORTCODE") or SHORTCODE
-    passkey   = os.environ.get("MPESA_PASSKEY")   or PASSKEY
-    callback  = os.environ.get("MPESA_CALLBACK_URL") or CALLBACK_URL
+    shortcode = get_mpesa_setting("mpesa_shortcode", "174379")
+    passkey   = get_mpesa_setting("mpesa_passkey", "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919")
+    callback  = get_mpesa_setting("mpesa_callback_url")
 
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     password  = base64.b64encode(f"{shortcode}{passkey}{timestamp}".encode()).decode()
@@ -172,8 +200,9 @@ def query_stk(checkout_request_id):
         return {"success": False, "paid": False, "message": "Token error."}
 
     password, timestamp = _generate_password()
+    shortcode = get_mpesa_setting("mpesa_shortcode", "174379")
     payload = {
-        "BusinessShortCode": SHORTCODE,
+        "BusinessShortCode": shortcode,
         "Password":          password,
         "Timestamp":         timestamp,
         "CheckoutRequestID": checkout_request_id,

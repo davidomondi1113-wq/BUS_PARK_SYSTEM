@@ -1,7 +1,18 @@
 # main.py
 from flask import Flask, render_template, request, redirect, url_for, session, Response, jsonify
-from datetime import datetime
+from datetime import datetime, timedelta
 import uuid
+from dotenv import load_dotenv
+import io
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
+import qrcode
+from PIL import Image as PILImage
+
+# Load environment variables from .env file
+load_dotenv()
 
 from database import db
 from models import User, Slot, Bus, Transaction, Driver, Setting
@@ -244,7 +255,100 @@ def receipt(receipt_number):
 
     # Try to locate an active parked bus matching this receipt (optional)
     bus = Bus.query.filter_by(receipt_number=receipt_number).first()
-    return render_template("receipt.html", txn=txn, bus=bus, user=current_user())
+
+    # Receipt URL for QR code and downloads
+    receipt_url = request.url
+
+    # Parking expiry: default 24 hours from entry
+    expiry_str = None
+    try:
+        entry_dt = datetime.strptime(txn["entry_time"], "%Y-%m-%d %H:%M")
+        expiry_dt = entry_dt + timedelta(hours=int(get_setting("parking_duration_hours", 24)))
+        expiry_str = expiry_dt.strftime("%Y-%m-%d %H:%M")
+    except Exception:
+        expiry_str = "N/A"
+
+    return render_template(
+        "receipt.html",
+        txn=txn,
+        bus=bus,
+        user=current_user(),
+        receipt_url=receipt_url,
+        expiry_time=expiry_str,
+    )
+
+
+# ---------------------------
+# Receipt PDF Download
+# ---------------------------
+@app.route("/receipt/<receipt_number>/pdf")
+@login_required
+def receipt_pdf(receipt_number):
+    txn = txns.get_transaction_by_receipt(receipt_number)
+    if not txn:
+        return "Receipt not found", 404
+
+    bus = Bus.query.filter_by(receipt_number=receipt_number).first()
+
+    # Generate QR code
+    qr = qrcode.QRCode(version=1, box_size=10, border=5)
+    qr.add_data(request.url_root.rstrip('/') + url_for('receipt', receipt_number=receipt_number))
+    qr.make(fit=True)
+    qr_img = qr.make_image(fill='black', back_color='white')
+    qr_buffer = io.BytesIO()
+    qr_img.save(qr_buffer, format='PNG')
+    qr_buffer.seek(0)
+
+    # Create PDF
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    styles = getSampleStyleSheet()
+    story = []
+
+    # Title
+    story.append(Paragraph("Kisumu Mpya Bus Park Receipt", styles['Title']))
+    story.append(Spacer(1, 12))
+
+    # Receipt details
+    story.append(Paragraph(f"Receipt #: {txn['receipt_number']}", styles['Normal']))
+    story.append(Paragraph(f"Date: {txn['date']} {txn['exit_time']}", styles['Normal']))
+    story.append(Paragraph(f"Bus Number: {txn['bus_number']}", styles['Normal']))
+    story.append(Paragraph(f"Bus Type: {txn['bus_type']}", styles['Normal']))
+    story.append(Paragraph(f"Driver Phone: {txn['driver_phone']}", styles['Normal']))
+    if bus:
+        story.append(Paragraph(f"Slot: {bus.slot_number}", styles['Normal']))
+        story.append(Paragraph(f"Route: {bus.route}", styles['Normal']))
+    story.append(Paragraph(f"Amount Paid: Ksh {txn['amount_paid']}", styles['Normal']))
+    story.append(Paragraph(f"Duration: {txn['duration_minutes']} minutes", styles['Normal']))
+    story.append(Paragraph(f"Pass: {txn['pass_used'] or 'None'}", styles['Normal']))
+    story.append(Paragraph(f"Recorded By: {txn['recorded_by']}", styles['Normal']))
+
+    # Expiry
+    try:
+        entry_dt = datetime.strptime(txn["entry_time"], "%Y-%m-%d %H:%M")
+        expiry_dt = entry_dt + timedelta(hours=int(get_setting("parking_duration_hours", 24)))
+        expiry_str = expiry_dt.strftime("%Y-%m-%d %H:%M")
+        story.append(Paragraph(f"Expiration: {expiry_str}", styles['Normal']))
+    except:
+        story.append(Paragraph("Expiration: N/A", styles['Normal']))
+
+    story.append(Spacer(1, 12))
+
+    # QR Code
+    qr_pil = PILImage.open(qr_buffer)
+    qr_width, qr_height = qr_pil.size
+    qr_img_reportlab = Image(qr_buffer, width=100, height=100)
+    story.append(qr_img_reportlab)
+    story.append(Paragraph("Scan to verify", styles['Normal']))
+
+    doc.build(story)
+
+    buffer.seek(0)
+    return Response(
+        buffer.getvalue(),
+        mimetype='application/pdf',
+        headers={"Content-Disposition": f"attachment; filename={receipt_number}.pdf"}
+    )
 
 
 # ---------------------------
