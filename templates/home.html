@@ -107,11 +107,13 @@
         <nav>
             <a href="/bus_entry">Bus Entry</a>
             <a href="/bus_exit">Bus Exit</a>
+            {% if user.role == 'admin' %}
             <a href="/slots">Slots</a>
             <a href="/drivers">Drivers</a>
             <a href="/transactions">Transactions</a>
             <a href="/reports">Reports</a>
-            {% if user and user.role == 'Admin' %}<a href="/users">Users</a>{% endif %}
+            <a href="/users">Users</a>
+            {% endif %}
             <a href="/logout">Logout ({{ user.username if user }})</a>
         </nav>
     </header>
@@ -147,10 +149,12 @@
         <div class="btn-center">
             <a href="/bus_entry" class="btn-secondary">🚌 Enter a Bus</a>
             <a href="/bus_exit" class="btn-secondary">🚪 Exit a Bus</a>
+            {% if user.role == 'admin' %}
             <a href="/slots" class="btn-secondary">🅿️ View Slots</a>
             <a href="/drivers" class="btn-secondary">👤 Drivers</a>
             <a href="/transactions" class="btn-secondary">💳 Transactions</a>
             <a href="/reports" class="btn-secondary">📊 Reports</a>
+            {% endif %}
         </div>
 
         {% if buses %}

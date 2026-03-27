@@ -107,18 +107,18 @@
                 downloadLink.addEventListener('click', function (evt) {
                     evt.preventDefault();
                     const receiptData = {
-                        receipt_number: '{{ txn.receipt_number }}',
+                        receipt_number: '{{ txn.receipt_number|default("") }}',
                         url: window.location.href,
-                        date: '{{ txn.date }} {{ txn.exit_time }}',
-                        bus_number: '{{ txn.bus_number }}',
-                        bus_type: '{{ txn.bus_type }}',
-                        driver_phone: '{{ txn.driver_phone }}',
+                        date: '{{ txn.date|default("") }} {{ txn.exit_time|default("") }}',
+                        bus_number: '{{ txn.bus_number|default("") }}',
+                        bus_type: '{{ txn.bus_type|default("") }}',
+                        driver_phone: '{{ txn.driver_phone|default("") }}',
                         slot: '{{ bus.slot_number if bus else "N/A" }}',
                         route: '{{ bus.route if bus else "N/A" }}',
-                        amount_paid: {{ txn.amount_paid }},
-                        duration_minutes: {{ txn.duration_minutes }},
-                        pass_used: '{{ txn.pass_used }}',
-                        expiry: '{{ expiry_time }}',
+                        amount_paid: {{ txn.amount_paid|default(0) }},
+                        duration_minutes: {{ txn.duration_minutes|default(0) }},
+                        pass_used: '{{ txn.pass_used or "None" }}',
+                        expiry: '{{ expiry_time|default("N/A") }}'
                     };
                     const blob = new Blob([JSON.stringify(receiptData, null, 2)], { type: 'application/json' });
                     const url = URL.createObjectURL(blob);

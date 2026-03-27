@@ -20,7 +20,8 @@
         th { background: #1a73e8; color: white; }
         tr:nth-child(even) { background: #f9f9f9; }
         .role-admin { background: #fce8e6; color: #c5221f; padding: 3px 10px; border-radius: 10px; font-size: 12px; font-weight: bold; }
-        .role-staff { background: #e8f0fe; color: #1a73e8; padding: 3px 10px; border-radius: 10px; font-size: 12px; font-weight: bold; }
+        .role-agent { background: #e8f0fe; color: #1a73e8; padding: 3px 10px; border-radius: 10px; font-size: 12px; font-weight: bold; }
+        .role-staff { background: #d1ecf1; color: #0c5460; padding: 3px 10px; border-radius: 10px; font-size: 12px; font-weight: bold; }
         .btn-sm { padding: 5px 12px; border-radius: 5px; font-size: 13px; font-weight: bold; cursor: pointer; border: none; }
         .btn-danger { background: #dc3545; color: white; }
         .btn-danger:hover { background: #b02a37; }
@@ -66,7 +67,7 @@
             <tr>
                 <td>{{ u.username }}</td>
                 <td>{{ u.name }}</td>
-                <td><span class="{{ 'role-admin' if u.role == 'Admin' else 'role-staff' }}">{{ u.role }}</span></td>
+                <td><span class="{{ 'role-admin' if u.role == 'admin' else 'role-agent' if u.role == 'agent' else 'role-staff' }}">{{ u.role }}</span></td>
                 <td>
                     {% if u.username != 'admin' %}
                     <form method="POST" action="/users/delete/{{ u.username }}" style="display:inline"
@@ -91,8 +92,8 @@
                     <div><label>Password</label><input type="password" name="password" required></div>
                     <div><label>Role</label>
                         <select name="role">
-                            <option value="Staff">Staff</option>
-                            <option value="Admin">Admin</option>
+                            <option value="agent">Agent</option>
+                            <option value="admin">Admin</option>
                         </select>
                     </div>
                 </div>

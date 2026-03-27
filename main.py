@@ -10,6 +10,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
 import qrcode
 from PIL import Image as PILImage
+from functools import wraps
 
 # Load environment variables from .env file
 load_dotenv()
@@ -40,7 +41,7 @@ migrate = Migrate(app, db)
 def ensure_default_user():
     """Ensure there is at least one user (admin) to log in with."""
     if User.query.count() == 0:
-        admin = User(username="admin", password="admin123", role="Admin", name="Administrator")
+        admin = User(username="admin", password="admin123", role="admin", name="Administrator")
         db.session.add(admin)
         db.session.commit()
         print("[INFO] Created default admin user: admin/admin123")
@@ -52,12 +53,12 @@ def _generate_receipt_number():
 
 
 def get_setting(key, default=None):
-    setting = Setting.query.get(key)
+    setting = db.session.get(Setting, key)
     return setting.value if setting else default
 
 
 def set_setting(key, value):
-    setting = Setting.query.get(key)
+    setting = db.session.get(Setting, key)
     if not setting:
         setting = Setting(key=key, value=str(value))
         db.session.add(setting)
@@ -106,6 +107,20 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated
 
+def role_required(valid_roles):
+    def decorator(f):
+        @wraps(f)
+        def decorated(*args, **kwargs):
+            user = current_user()
+            if not user or user.get("role") not in valid_roles:
+                return redirect(url_for("home"))
+            return f(*args, **kwargs)
+        return decorated
+    return decorator
+
+def admin_required(f):
+    return role_required(["admin"])(f)
+
 
 # ---------------------------
 # Static logo route (SVG)
@@ -140,7 +155,7 @@ def login():
         set_setting("total_slots", str(total_slots))
         ensure_slots()
 
-        user = User(username=username, password=password, role="Admin", name=name)
+        user = User(username=username, password=password, role="admin", name=name)
         db.session.add(user)
         db.session.commit()
         return redirect(url_for("login"))
@@ -187,7 +202,7 @@ def home():
 # Bus Entry
 # ---------------------------
 @app.route("/bus_entry", methods=["GET", "POST"])
-@login_required
+@role_required(["admin", "agent"])
 def bus_entry():
     message = None
     msg_type = "success"
@@ -355,7 +370,7 @@ def receipt_pdf(receipt_number):
 # Bus Exit
 # ---------------------------
 @app.route("/bus_exit", methods=["GET", "POST"])
-@login_required
+@role_required(["admin", "agent"])
 def bus_exit():
     message  = None
     msg_type = "success"
@@ -405,7 +420,7 @@ def bus_exit():
 # Slots
 # ---------------------------
 @app.route("/slots")
-@login_required
+@role_required(["admin"])
 def slots_view():
     total_slots = int(get_setting("total_slots", "100"))
     return render_template("slots.html",
@@ -422,7 +437,7 @@ def slots_view():
 # Transactions
 # ---------------------------
 @app.route("/transactions")
-@login_required
+@role_required(["admin"])
 def transactions_view():
     all_txns = txns.get_all_transactions()
     total_revenue   = txns.get_total_revenue()
@@ -441,6 +456,7 @@ def transactions_view():
 # ---------------------------
 @app.route("/reports")
 @login_required
+@admin_required
 def reports():
     period = request.args.get("period", "daily")
     if period == "weekly":
@@ -460,6 +476,7 @@ def reports():
 
 @app.route("/reports/export")
 @login_required
+@admin_required
 def export_csv():
     csv_data = rpts.export_transactions_csv()
     return Response(
@@ -535,7 +552,7 @@ def mpesa_callback():
 # ---------------------------
 
 @app.route("/api/slots")
-@login_required
+@role_required(["admin"])
 def api_slots():
     total_slots = int(get_setting("total_slots", "100"))
     return jsonify({
@@ -547,14 +564,14 @@ def api_slots():
 
 
 @app.route("/api/buses")
-@login_required
+@role_required(["admin"])
 def api_buses():
     buses = [b.to_dict() for b in Bus.query.filter_by(status="Parked").order_by(Bus.entry_time.desc()).all()]
     return jsonify({"buses": buses})
 
 
 @app.route("/api/transactions")
-@login_required
+@role_required(["admin"])
 def api_transactions():
     return jsonify({"transactions": txns.get_all_transactions()})
 
@@ -563,7 +580,7 @@ def api_transactions():
 # Drivers
 # ---------------------------
 @app.route("/drivers")
-@login_required
+@role_required(["admin"])
 def drivers_list():
     return render_template("drivers.html",
         drivers=drv.get_all_drivers(),
@@ -572,7 +589,7 @@ def drivers_list():
     )
 
 @app.route("/drivers/add", methods=["GET", "POST"])
-@login_required
+@role_required(["admin"])
 def driver_add():
     if request.method == "POST":
         drv.add_driver(
@@ -588,7 +605,7 @@ def driver_add():
                            parked_buses=Bus.query.filter_by(status="Parked").all(), message=None, user=current_user())
 
 @app.route("/drivers/edit/<int:driver_id>", methods=["GET", "POST"])
-@login_required
+@role_required(["admin"])
 def driver_edit(driver_id):
     driver = drv.get_driver_by_id(driver_id)
     if not driver:
@@ -605,13 +622,13 @@ def driver_edit(driver_id):
                            parked_buses=Bus.query.filter_by(status="Parked").all(), message=None, user=current_user())
 
 @app.route("/drivers/delete/<int:driver_id>", methods=["POST"])
-@login_required
+@role_required(["admin"])
 def driver_delete(driver_id):
     drv.delete_driver(driver_id)
     return redirect(url_for("drivers_list"))
 
 @app.route("/drivers/assign/<int:driver_id>", methods=["POST"])
-@login_required
+@role_required(["admin"])
 def driver_assign(driver_id):
     drv.assign_bus(driver_id, request.form.get("bus_number", ""))
     return redirect(url_for("drivers_list"))
@@ -621,18 +638,14 @@ def driver_assign(driver_id):
 # Users (Admin only)
 # ---------------------------
 @app.route("/users")
-@login_required
+@admin_required
 def users_list():
-    if current_user()["role"] != "Admin":
-        return redirect(url_for("home"))
     return render_template("users.html",
         users=usr.get_all_users(), user=current_user(), message=None)
 
 @app.route("/users/add", methods=["POST"])
-@login_required
+@admin_required
 def user_add():
-    if current_user()["role"] != "Admin":
-        return redirect(url_for("home"))
     success = usr.add_user(
         username=request.form["username"],
         password=request.form["password"],
@@ -644,19 +657,15 @@ def user_add():
         users=usr.get_all_users(), user=current_user(), message=msg)
 
 @app.route("/users/reset", methods=["POST"])
-@login_required
+@admin_required
 def user_reset():
-    if current_user()["role"] != "Admin":
-        return redirect(url_for("home"))
     usr.reset_password(request.form["username"], request.form["new_password"])
     return render_template("users.html",
         users=usr.get_all_users(), user=current_user(), message="Password reset.")
 
 @app.route("/users/delete/<username>", methods=["POST"])
-@login_required
+@admin_required
 def user_delete(username):
-    if current_user()["role"] != "Admin":
-        return redirect(url_for("home"))
     usr.delete_user(username)
     return redirect(url_for("users_list"))
 

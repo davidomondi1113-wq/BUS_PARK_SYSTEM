@@ -5,10 +5,9 @@ from database import db
 from models import User
 
 ROLE_PERMISSIONS = {
-    "Admin": ["home", "bus_entry", "bus_exit", "slots", "drivers",
+    "admin": ["home", "bus_entry", "bus_exit", "slots", "drivers",
               "transactions", "reports", "users"],
-    "Staff": ["home", "bus_entry", "bus_exit", "slots", "drivers",
-              "transactions", "reports"],
+    "agent": ["home", "bus_entry", "bus_exit"],
 }
 
 
@@ -35,6 +34,8 @@ def get_all_users():
 
 
 def add_user(username, password, role, name):
+    if role not in ["admin", "agent"]:
+        return False
     if User.query.filter_by(username=username).first():
         return False
     user = User(username=username, password=password, role=role, name=name)
